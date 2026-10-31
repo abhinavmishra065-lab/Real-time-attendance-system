@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Student portal · SmartClass{% endblock %}
+
+{% block shell %}
+<main class="student-auth-page">
+  <header class="student-auth-header">
+    <a href="{{ url_for('attendance.student_login') }}" class="brand-lockup">
+      <span class="brand-mark">S</span>
+      <span><span class="brand-name">SmartClass</span><span class="brand-caption">Student portal</span></span>
+    </a>
+    <a href="{{ url_for('attendance.login') }}" class="quiet-button">Teacher sign in</a>
+  </header>
+  <div class="student-auth-layout">
+    <section class="student-welcome">
+      <p class="eyebrow">Your classroom, at a glance</p>
+      <h1 class="student-story-title">Progress is<br>built one day<br><em>at a time.</em></h1>
+      <p>Sign in with the email address and roll number your teacher used when enrolling you. Your attendance details are visible only to you.</p>
+      <div class="privacy-note"><span aria-hidden="true">↗</span><span>Your face images are not stored. Only attendance records and face encodings for classroom recognition are kept.</span></div>
+    </section>
+    <section class="student-login-card">
+      <p class="eyebrow">Student access</p>
+      <h2 class="auth-heading">Check your attendance</h2>
+      <p class="auth-intro">Use your enrolled roll number and student email.</p>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="mb-5 space-y-2" role="status" aria-live="polite">
+            {% for category, message in messages %}
+              <div class="notice {% if category == 'error' %}notice-error{% else %}notice-success{% endif %}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+      <form method="post" action="{{ url_for('attendance.student_login') }}" class="space-y-5">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div>
+          <label for="student-roll-no" class="field-label">Roll number</label>
+          <input id="student-roll-no" name="roll_no" type="text" autocomplete="username" maxlength="40" required autofocus class="form-input" placeholder="As provided by your teacher">
+        </div>
+        <div>
+          <label for="student-email" class="field-label">Student email</label>
+          <input id="student-email" name="email" type="email" autocomplete="email" maxlength="254" required class="form-input" placeholder="you@college.edu">
+        </div>
+        <button type="submit" class="primary-button w-full">View my attendance</button>
+      </form>
+      <p class="login-footnote">Need help? Ask your teacher to confirm the email and roll number used during enrollment.</p>
+    </section>
+  </div>
+  <footer class="student-auth-footer">SmartClass · Student attendance portal</footer>
+</main>
+{% endblock %}

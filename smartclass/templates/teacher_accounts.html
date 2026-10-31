@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Teacher accounts · SmartClass{% endblock %}
+
+{% block content %}
+<section>
+  <p class="eyebrow">Administrator</p>
+  <h1 class="student-dashboard-title">Teacher accounts</h1>
+  <p class="muted-copy">Review teacher registration requests before granting access.</p>
+</section>
+
+<section class="record-section">
+  <div class="section-heading-row">
+    <div>
+      <p class="eyebrow">Needs review</p>
+      <h2 class="section-title">Pending requests</h2>
+    </div>
+    <span class="record-count">{{ pending_teachers|length }} request{% if pending_teachers|length != 1 %}s{% endif %}</span>
+  </div>
+  {% if pending_teachers %}
+  <div class="record-list">
+    {% for teacher in pending_teachers %}
+    <article class="record-row">
+      <div class="record-details"><strong>{{ teacher.name }}</strong><span>{{ teacher.email }} · @{{ teacher.username }}</span></div>
+      <div class="flex gap-2">
+        <form method="post" action="{{ url_for('attendance.approve_teacher', teacher_id=teacher.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button type="submit" class="primary-button">Approve</button>
+        </form>
+        <form method="post" action="{{ url_for('attendance.reject_teacher', teacher_id=teacher.id) }}" onsubmit="return confirm('Reject this teacher account request?');">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button type="submit" class="quiet-button">Reject</button>
+        </form>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-records"><h3>No pending requests</h3><p>New teacher registrations will appear here.</p></div>
+  {% endif %}
+</section>
+
+<section class="record-section">
+  <div class="section-heading-row">
+    <div><p class="eyebrow">Access granted</p><h2 class="section-title">Approved teachers</h2></div>
+    <span class="record-count">{{ approved_teachers|length }} teacher{% if approved_teachers|length != 1 %}s{% endif %}</span>
+  </div>
+  {% if approved_teachers %}
+  <div class="record-list">
+    {% for teacher in approved_teachers %}
+    <article class="record-row">
+      <div class="record-details"><strong>{{ teacher.name }}</strong><span>{{ teacher.email }} · @{{ teacher.username }}</span></div>
+      <span class="record-status record-present"><span class="status-dot"></span>Approved</span>
+    </article>
+    {% endfor %}
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

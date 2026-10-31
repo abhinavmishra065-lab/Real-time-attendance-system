@@ -1,0 +1,17 @@
+# Python environments and generated files
+**/.venv/
+**/venv/
+**/__pycache__/
+*.py[cod]
+
+# Local databases and configuration
+**/instance/
+*.db
+*.sqlite
+*.sqlite3
+.env
+.env.*
+
+# Student face encodings contain biometric data
+**/encodings/*
+!**/encodings/.gitkeep

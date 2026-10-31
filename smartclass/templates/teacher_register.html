@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Teacher registration · SmartClass{% endblock %}
+
+{% block shell %}
+<main class="student-auth-page">
+  <header class="student-auth-header">
+    <a href="{{ url_for('attendance.login') }}" class="brand-lockup">
+      <span class="brand-mark">S</span>
+      <span><span class="brand-name">SmartClass</span><span class="brand-caption">Teacher workspace</span></span>
+    </a>
+    <a href="{{ url_for('attendance.login') }}" class="quiet-button">Teacher sign in</a>
+  </header>
+  <div class="student-auth-layout">
+    <section class="student-welcome">
+      <p class="eyebrow">Teacher access</p>
+      <h1 class="student-story-title">A better view<br>of every<br><em>classroom.</em></h1>
+      <p>Create a teacher account to manage classes and attendance. An administrator reviews each request before the account can be used.</p>
+      <div class="privacy-note"><span aria-hidden="true">↗</span><span>Your password is stored as a secure hash, never as plain text.</span></div>
+    </section>
+    <section class="student-login-card">
+      <p class="eyebrow">Registration request</p>
+      <h2 class="auth-heading">Create your account</h2>
+      <p class="auth-intro">All fields are required. Use at least 10 characters for your password.</p>
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="mb-5 space-y-2" role="status" aria-live="polite">
+            {% for category, message in messages %}
+              <div class="notice {% if category == 'error' %}notice-error{% else %}notice-success{% endif %}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+      <form method="post" action="{{ url_for('attendance.teacher_register') }}" class="space-y-4">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div>
+          <label for="teacher-name" class="field-label">Full name</label>
+          <input id="teacher-name" name="name" type="text" maxlength="120" autocomplete="name" required class="form-input" placeholder="Your name">
+        </div>
+        <div>
+          <label for="teacher-email" class="field-label">Email</label>
+          <input id="teacher-email" name="email" type="email" maxlength="254" autocomplete="email" required class="form-input" placeholder="you@college.edu">
+        </div>
+        <div>
+          <label for="teacher-username" class="field-label">Username</label>
+          <input id="teacher-username" name="username" type="text" minlength="3" maxlength="40" pattern="[A-Za-z0-9_.-]+" autocomplete="username" required class="form-input" placeholder="Choose a username">
+        </div>
+        <div>
+          <label for="teacher-password" class="field-label">Password</label>
+          <input id="teacher-password" name="password" type="password" minlength="10" autocomplete="new-password" required class="form-input" placeholder="At least 10 characters">
+        </div>
+        <div>
+          <label for="teacher-password-confirm" class="field-label">Confirm password</label>
+          <input id="teacher-password-confirm" name="password_confirm" type="password" minlength="10" autocomplete="new-password" required class="form-input" placeholder="Enter the password again">
+        </div>
+        <button type="submit" class="primary-button w-full">Request teacher account</button>
+      </form>
+    </section>
+  </div>
+  <footer class="student-auth-footer">SmartClass · Teacher account approval required</footer>
+</main>
+{% endblock %}

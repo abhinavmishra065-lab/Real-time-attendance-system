@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Class check-in · SmartClass{% endblock %}
+
+{% block content %}
+<section>
+  <p class="eyebrow">Geofenced student check-in</p>
+  <h1 class="student-dashboard-title">{{ class_session.schedule.course }} · Semester {{ class_session.schedule.semester }}</h1>
+  <p class="muted-copy">{{ class_session.class_date.strftime('%A, %d %B') }} · {{ class_session.starts_at.strftime('%I:%M %p') }}–{{ class_session.ends_at.strftime('%I:%M %p') }}</p>
+</section>
+<section id="student-checkin" class="surface-card mt-6"
+  data-frame-url="{{ url_for('attendance.student_checkin_frame') }}"
+  data-csrf-token="{{ csrf_token }}"
+  data-checkin-token="{{ checkin_token }}"
+  data-session-id="{{ class_session.id }}"
+  data-starts-at="{{ class_session.starts_at.isoformat() }}"
+  data-ends-at="{{ class_session.ends_at.isoformat() }}">
+  {% if existing_record %}
+    <div class="empty-records"><h2 class="section-title">Attendance: {{ existing_record.status }}</h2><p>{% if existing_record.time %}Recorded at {{ existing_record.time.strftime('%I:%M %p') }}.{% else %}Your teacher or the class system recorded this status.{% endif %}</p></div>
+  {% elif now < class_session.starts_at %}
+    <div class="empty-records"><h2 class="section-title">Check-in is not open yet</h2><p>Return during the scheduled class time.</p></div>
+  {% elif now > class_session.ends_at %}
+    <div class="empty-records"><h2 class="section-title">This class has ended</h2><p>Ask your teacher if you need an attendance correction.</p></div>
+  {% else %}
+    <h2 class="section-title">Verify your presence</h2>
+    <p class="muted-copy mt-2">Allow location access and camera access during check-in. Your face is matched and blink-checked live; camera frames and coordinates are not saved.</p>
+    <div class="relative mt-5 aspect-video max-w-2xl overflow-hidden rounded-2xl bg-slate-950">
+      <video id="checkin-video" class="h-full w-full object-cover" autoplay muted playsinline></video>
+      <div id="checkin-placeholder" class="absolute inset-0 grid place-items-center p-8 text-center text-sm text-slate-300">Select start check-in when you are ready.</div>
+    </div>
+    <div class="mt-4 flex flex-wrap gap-3">
+      <button id="checkin-start" type="button" class="primary-button">Start check-in</button>
+      <button id="checkin-stop" type="button" disabled class="quiet-button">Stop camera</button>
+    </div>
+    <p id="checkin-status" class="mt-4 min-h-5 text-sm text-slate-500" role="status" aria-live="polite">A live face match, blink, and location inside the classroom boundary are required.</p>
+  {% endif %}
+</section>
+<p class="calculation-note">Browser location and face checks reduce proxy attendance but cannot guarantee a device's location has not been spoofed. Ask your teacher for help if GPS is inaccurate indoors.</p>
+{% endblock %}
+
+{% block scripts %}
+{% if not existing_record and now >= class_session.starts_at and now <= class_session.ends_at %}
+<script src="{{ url_for('static', filename='js/student_checkin.js') }}" defer></script>
+{% endif %}
+{% endblock %}

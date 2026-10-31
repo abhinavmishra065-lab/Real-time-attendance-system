@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}My attendance · SmartClass{% endblock %}
+
+{% block content %}
+<section class="student-greeting">
+  <div>
+    <p class="eyebrow">Your attendance record</p>
+    <h1 class="student-dashboard-title">Hello, {{ student.name.split(' ')[0] }}.</h1>
+    <p class="muted-copy">A clear look at how you’ve been showing up.</p>
+    <p class="muted-copy">{{ student.course or "Course not provided" }} · {{ student.branch or "Branch not provided" }}{% if student.semester %} · Semester {{ student.semester }}{% endif %}</p>
+  </div>
+  <div class="student-id-chip"><span>ROLL NUMBER</span><strong>{{ student.roll_no }}</strong></div>
+</section>
+
+<section class="student-stat-grid" aria-label="Attendance summary">
+  <article class="student-stat-card attendance-score-card">
+    <div class="score-topline"><span class="stat-label">Overall attendance</span><span class="score-period">SINCE ENROLLMENT</span></div>
+    <div class="score-row">
+      <strong class="attendance-score">{{ attendance_percent }}<span>%</span></strong>
+      <div class="score-track" role="progressbar" aria-label="Attendance percentage" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ attendance_percent }}"><span style="width: {{ attendance_percent }}%"></span></div>
+    </div>
+    <p class="score-caption">{{ present_days }} present out of {{ class_days }} classes held to date</p>
+  </article>
+  <article class="student-stat-card today-status-card">
+    <span class="stat-label">Today's attendance</span>
+    {% if today_sessions %}
+      {% if today_present_count %}
+        <div class="today-status today-present"><span class="status-dot"></span>Present in {{ today_present_count }} class{% if today_present_count != 1 %}es{% endif %}</div>
+        <p class="score-caption">{{ today_completed_count }} of {{ today_sessions|length }} scheduled classes completed.</p>
+      {% elif today_completed_count == today_sessions|length %}
+        <div class="today-status today-pending"><span class="status-dot"></span>No classes marked present</div>
+        <p class="score-caption">Ask your teacher if you need an attendance correction.</p>
+      {% else %}
+        <div class="today-status today-pending"><span class="status-dot"></span>Classes scheduled today</div>
+        <p class="score-caption">Check in during each class time.</p>
+      {% endif %}
+    {% elif today_record %}
+      <div class="today-status today-present"><span class="status-dot"></span>Teacher-camera attendance: Present</div>
+      <p class="score-caption">Legacy daily attendance recorded at {{ today_record.time.strftime('%I:%M %p') }}. Scheduled self check-in appears with your class below.</p>
+    {% elif not student.course or not student.branch or not student.semester %}
+      <div class="today-status today-pending"><span class="status-dot"></span>Class profile incomplete</div>
+      <p class="score-caption">Ask your teacher to add your course, branch, and semester before your self check-in classes can appear.</p>
+    {% elif today.weekday() >= 5 %}
+      <div class="today-status today-pending"><span class="status-dot"></span>No class day scheduled</div>
+      <p class="score-caption">Weekend days are not included in the percentage.</p>
+    {% else %}
+      <div class="today-status today-pending"><span class="status-dot"></span>No matching class scheduled</div>
+      <p class="score-caption">Your teacher needs to add a timetable entry for your course, branch, and semester.</p>
+    {% endif %}
+    <span class="today-date">{{ today.strftime('%A, %d %B %Y') }}</span>
+  </article>
+</section>
+
+<section class="record-section">
+  <div class="section-heading-row">
+    <div><p class="eyebrow">By subject</p><h2 class="section-title">Subject attendance</h2></div>
+    <span class="record-count">{{ subject_summaries|length }} subject{% if subject_summaries|length != 1 %}s{% endif %}</span>
+  </div>
+  {% if subject_summaries %}
+  <div class="grid gap-4 sm:grid-cols-2">
+    {% for subject in subject_summaries %}
+    <article class="surface-card">
+      <div class="score-topline">
+        <span class="stat-label">{{ subject.name }}</span>
+        <span class="score-period">{{ subject.attendance_percent }}%</span>
+      </div>
+      <div class="score-row">
+        <strong class="attendance-score">{{ subject.attendance_percent }}<span>%</span></strong>
+        <div class="score-track" role="progressbar" aria-label="{{ subject.name }} attendance percentage" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ subject.attendance_percent }}"><span style="width: {{ subject.attendance_percent }}%"></span></div>
+      </div>
+      <p class="score-caption">{{ subject.present_classes }} present out of {{ subject.scheduled_classes }} classes held to date</p>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-records"><h3>No subjects scheduled yet</h3><p>Your subject attendance will appear after your teacher creates subjects and schedules classes for your course, branch, and semester.</p></div>
+  {% endif %}
+</section>
+
+<section class="record-section">
+  <div class="section-heading-row">
+    <div><p class="eyebrow">Your timetable</p><h2 class="section-title">Today's classes</h2></div>
+    <span class="record-count">{{ today_sessions|length }} class{% if today_sessions|length != 1 %}es{% endif %}</span>
+  </div>
+  {% if today_sessions %}
+  <div class="record-list">
+    {% for item in today_sessions %}
+    {% set class_session = item.session %}
+    <article class="record-row">
+      <div class="record-details">
+        <strong>{{ class_session.schedule.subject.name if class_session.schedule.subject else "Subject not assigned" }}</strong>
+        <span>{{ class_session.starts_at.strftime('%I:%M %p') }}–{{ class_session.ends_at.strftime('%I:%M %p') }} · Semester {{ class_session.schedule.semester }}</span>
+      </div>
+      {% if item.record %}
+        <span class="record-status {% if item.record.status == 'Present' %}record-present{% else %}record-absent{% endif %}"><span class="status-dot"></span>{{ item.record.status }}</span>
+      {% elif now < class_session.starts_at %}
+        <span class="record-count">Upcoming</span>
+      {% elif now <= class_session.ends_at %}
+        <a class="primary-button" href="{{ url_for('attendance.student_checkin', session_id=class_session.id) }}">Check in</a>
+      {% else %}
+        <span class="record-status record-absent"><span class="status-dot"></span>Absent</span>
+      {% endif %}
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-records">
+    <h3>{% if not student.course or not student.branch or not student.semester %}Complete your class profile{% else %}No classes scheduled today{% endif %}</h3>
+    <p>{% if not student.course or not student.branch or not student.semester %}Ask your teacher to add your course, branch, and semester to your student record. Once a matching class is on the timetable, its Check in button will appear here during class.{% else %}There is no timetable entry matching your course, branch, and semester today. Your teacher needs to schedule the class; the Check in button appears here during its scheduled time.{% endif %}</p>
+  </div>
+  {% endif %}
+</section>
+
+<section class="record-section">
+  <div class="section-heading-row">
+    <div>
+      <p class="eyebrow">A recent history</p>
+      <h2 class="section-title">Your class days</h2>
+    </div>
+    <span class="record-count">{{ recent_records|length }} recent record{% if recent_records|length != 1 %}s{% endif %}</span>
+  </div>
+  {% if recent_records %}
+  <div class="record-list">
+    {% for record in recent_records %}
+    <article class="record-row">
+      <div class="record-date-block"><span>{{ record.date.strftime('%b') }}</span><strong>{{ record.date.strftime('%d') }}</strong></div>
+      <div class="record-details"><strong>{{ record.class_session.schedule.subject.name if record.class_session and record.class_session.schedule.subject else record.date.strftime('%A') }}</strong><span>{{ record.date.strftime('%d %B %Y') }}</span></div>
+      <span class="record-status {% if record.status == 'Present' %}record-present{% else %}record-absent{% endif %}"><span class="status-dot"></span>{{ record.status }}</span>
+      <span class="record-time">{% if record.time %}{{ record.time.strftime('%I:%M %p') }}{% else %}—{% endif %}</span>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-records">
+    <span class="empty-mark">—</span>
+    <h3>No attendance records yet</h3>
+    <p>When your teacher marks you present, it will appear here.</p>
+  </div>
+  {% endif %}
+</section>
+
+<p class="calculation-note">Overall and subject percentages count classes that have finished since your enrollment; ongoing and future classes are not counted. Class check-in uses a live face/blink check and browser location; video frames and check-in coordinates are not retained. Geolocation can be inaccurate or spoofed, so ask your teacher if you need help.</p>
+{% endblock %}

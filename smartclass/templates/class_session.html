@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Class attendance · SmartClass{% endblock %}
+
+{% block content %}
+<section class="student-greeting">
+  <div>
+    <p class="eyebrow">Teacher attendance monitor</p>
+    <h1 class="student-dashboard-title">{{ class_session.schedule.subject.name if class_session.schedule.subject else "Subject not assigned" }}</h1>
+    <p class="muted-copy">{{ class_session.schedule.course }} · {{ class_session.schedule.branch }} · Semester {{ class_session.schedule.semester }} · {{ class_session.class_date.strftime('%A, %d %B %Y') }} · {{ class_session.starts_at.strftime('%I:%M %p') }}–{{ class_session.ends_at.strftime('%I:%M %p') }}</p>
+  </div>
+  <a href="{{ url_for('attendance.schedules') }}" class="quiet-button">Back to timetable</a>
+</section>
+<section id="class-monitor" class="record-section" data-status-url="{{ status_url }}" data-csrf-token="{{ csrf_token }}">
+  <div class="section-heading-row">
+    <div><p class="eyebrow">Live session</p><h2 class="section-title">Student attendance</h2></div>
+    <span id="session-state" class="record-count">{% if now < class_session.starts_at %}Upcoming{% elif now <= class_session.ends_at %}Check-in open{% else %}Class ended{% endif %}</span>
+  </div>
+  <div class="surface-card overflow-x-auto">
+    <table class="w-full min-w-[700px] text-left text-sm">
+      <thead><tr class="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500"><th class="px-3 py-3">Student</th><th class="px-3 py-3">Roll number</th><th class="px-3 py-3">Status</th><th class="px-3 py-3">Time</th><th class="px-3 py-3">Teacher override</th></tr></thead>
+      <tbody id="attendance-rows" class="divide-y divide-slate-100">
+        {% for row in attendance_rows %}
+        <tr data-student-id="{{ row.student_id }}">
+          <td class="px-3 py-3 font-medium">{{ row.name }}</td>
+          <td class="px-3 py-3">{{ row.roll_no }}</td>
+          <td class="px-3 py-3" data-status>{{ row.status }}</td>
+          <td class="px-3 py-3" data-time>{{ row.time or "—" }}</td>
+          <td class="px-3 py-3">
+            <form method="post" action="{{ url_for('attendance.update_class_attendance', session_id=class_session.id, student_id=row.student_id) }}" class="flex gap-2" data-manual-attendance>
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <button type="submit" name="status" value="Present" aria-pressed="{{ 'true' if row.status == 'Present' else 'false' }}" class="quiet-button attendance-choice">Mark present</button>
+              <button type="submit" name="status" value="Absent" aria-pressed="{{ 'true' if row.status == 'Absent' else 'false' }}" class="quiet-button attendance-choice">Mark absent</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td class="px-3 py-5 text-center text-slate-500" colspan="5">No students are enrolled in this course, branch, and semester.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p id="manual-attendance-feedback" class="calculation-note" role="status" aria-live="polite"></p>
+  <p class="calculation-note">Students check in only during class and within the configured geofence. Unmarked students are automatically marked absent after the scheduled end time. Use the controls above for emergency corrections.</p>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/class_session.js', v=2) }}" defer></script>
+{% endblock %}

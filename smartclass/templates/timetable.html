@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}Class timetable · SmartClass{% endblock %}
+
+{% block content %}
+<section>
+  <p class="eyebrow">Weekly timetable</p>
+  <h1 class="student-dashboard-title">Subjects and class timetable</h1>
+  <p class="muted-copy">Create subjects for each course, branch, and semester, then schedule classes under a subject. Students check in during class from inside its geofence.</p>
+</section>
+
+<section id="subject-management" class="surface-card mt-6">
+  <h2 class="section-title">Create a subject</h2>
+  <form method="post" action="{{ url_for('attendance.create_subject') }}" class="mt-5 grid gap-4 sm:grid-cols-2">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div><label class="field-label" for="subject-name">Subject name</label><input id="subject-name" name="name" required maxlength="120" class="form-input" placeholder="e.g. Data Structures"></div>
+    <div><label class="field-label" for="subject-course">Course</label><input id="subject-course" name="course" required maxlength="120" class="form-input" placeholder="B.Tech"></div>
+    <div><label class="field-label" for="subject-branch">Branch</label><input id="subject-branch" name="branch" required maxlength="120" class="form-input" placeholder="Computer Science Engineering"></div>
+    <div><label class="field-label" for="subject-semester">Semester</label><select id="subject-semester" name="semester" required class="form-input"><option value="">Select semester</option>{% for semester in range(1, 13) %}<option value="{{ semester }}">{{ semester }}{% if semester == 1 %}st{% elif semester == 2 %}nd{% elif semester == 3 %}rd{% else %}th{% endif %}</option>{% endfor %}</select></div>
+    <div class="sm:col-span-2"><button type="submit" class="primary-button">Add subject</button></div>
+  </form>
+</section>
+
+<section class="surface-card mt-6">
+  <h2 class="section-title">Schedule a weekly class</h2>
+  <form method="post" class="mt-5 grid gap-4 sm:grid-cols-2" id="schedule-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="sm:col-span-2"><label class="field-label" for="schedule-subject">Subject</label><select id="schedule-subject" name="subject_id" required class="form-input" {% if not subjects %}disabled{% endif %}><option value="">Select a subject</option>{% for subject in subjects %}<option value="{{ subject.id }}">{{ subject.name }} · {{ subject.course }} · {{ subject.branch }} · Semester {{ subject.semester }}</option>{% endfor %}</select>{% if not subjects %}<p class="mt-1 text-xs text-slate-500">Create a subject above before scheduling a class.</p>{% endif %}</div>
+    <div>
+      <label class="field-label" for="schedule-weekday">Day</label>
+      <select id="schedule-weekday" name="weekday" required class="form-input">{% for day in weekday_names %}<option value="{{ loop.index0 }}">{{ day }}</option>{% endfor %}</select>
+    </div>
+    <div><label class="field-label" for="schedule-start">Starts</label><input id="schedule-start" name="start_time" type="time" required class="form-input"></div>
+    <div><label class="field-label" for="schedule-end">Ends</label><input id="schedule-end" name="end_time" type="time" required class="form-input"></div>
+    <div class="sm:col-span-2">
+      <div class="flex flex-wrap items-center gap-3">
+        <button id="locate-classroom" type="button" class="quiet-button">Use my current location</button>
+        <span id="location-status" class="text-sm text-slate-500">Set the classroom center from the teacher's device.</span>
+      </div>
+    </div>
+    <div><label class="field-label" for="schedule-latitude">Classroom latitude</label><input id="schedule-latitude" name="latitude" type="number" step="any" min="-90" max="90" required class="form-input" placeholder="Use current location"></div>
+    <div><label class="field-label" for="schedule-longitude">Classroom longitude</label><input id="schedule-longitude" name="longitude" type="number" step="any" min="-180" max="180" required class="form-input" placeholder="Use current location"></div>
+    <div>
+      <label class="field-label" for="schedule-radius">Check-in radius (meters)</label>
+      <input id="schedule-radius" name="radius_m" type="number" min="25" max="500" value="100" required class="form-input">
+      <p class="mt-1 text-xs text-slate-500">Default 100 m; GPS accuracy can vary indoors.</p>
+    </div>
+    <div class="sm:col-span-2"><button type="submit" {% if not subjects %}disabled{% endif %} class="primary-button disabled:cursor-not-allowed disabled:opacity-50">Save weekly class</button></div>
+  </form>
+</section>
+
+<section id="today-sessions" class="record-section">
+  <div class="section-heading-row"><div><p class="eyebrow">Today's sessions</p><h2 class="section-title">Attendance monitor</h2></div><span class="record-count">{{ todays_sessions|length }} class{% if todays_sessions|length != 1 %}es{% endif %}</span></div>
+  {% if todays_sessions %}
+  <div class="record-list">
+    {% for class_session in todays_sessions %}
+    <article class="record-row">
+      <div class="record-details">
+        <strong>{{ class_session.schedule.subject.name if class_session.schedule.subject else "Subject not assigned" }} · {{ class_session.schedule.course }} · Semester {{ class_session.schedule.semester }}</strong>
+        <span>{{ class_session.starts_at.strftime('%I:%M %p') }}–{{ class_session.ends_at.strftime('%I:%M %p') }}</span>
+      </div>
+      <a class="quiet-button" href="{{ url_for('attendance.class_session_detail', session_id=class_session.id) }}">View attendance</a>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-records"><h3>No classes scheduled today</h3><p>Today's sessions will appear here based on the weekly timetable.</p></div>
+  {% endif %}
+</section>
+
+<section class="record-section">
+  <div class="section-heading-row"><div><p class="eyebrow">Recurring classes</p><h2 class="section-title">Subjects and schedules</h2></div><span class="record-count">{{ subject_sections|length }} subject section{% if subject_sections|length != 1 %}s{% endif %}</span></div>
+  {% for section in subject_sections %}
+  <section class="surface-card mb-4">
+    <div class="section-heading-row">
+      <div>
+        <h3 class="section-title">{{ section.subject.name if section.subject else "Subject not assigned" }}</h3>
+      {% if section.subject %}<p class="muted-copy">{{ section.subject.course }} · {{ section.subject.branch }} · Semester {{ section.subject.semester }}</p>{% else %}<p class="muted-copy">Legacy schedules can be assigned a subject without losing their sessions or attendance.</p>{% endif %}
+      </div>
+      <span class="record-count">{{ section.schedules|length }} weekly class{% if section.schedules|length != 1 %}es{% endif %}</span>
+    </div>
+    {% if section.schedules %}
+    <div class="record-list">
+      {% for schedule in section.schedules %}
+      <article class="record-row">
+        <div class="record-details">
+          <strong>{{ weekday_names[schedule.weekday] }}</strong>
+          <span>{{ schedule.start_time.strftime('%I:%M %p') }}–{{ schedule.end_time.strftime('%I:%M %p') }} · {{ schedule.radius_m }} m radius</span>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <a class="quiet-button" href="{{ url_for('attendance.schedules') }}#today-sessions">Today's attendance</a>
+          {% if not schedule.subject %}
+          <form method="post" action="{{ url_for('attendance.assign_schedule_subject', schedule_id=schedule.id) }}" class="flex gap-2">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <select name="subject_id" required aria-label="Assign subject to {{ schedule.course }} class" class="form-input">
+              <option value="">Assign subject</option>
+              {% for subject in subjects if subject.course|lower == schedule.course|lower and subject.branch|lower == schedule.branch|lower and subject.semester == schedule.semester %}
+              <option value="{{ subject.id }}">{{ subject.name }}</option>
+              {% endfor %}
+            </select>
+            <button type="submit" class="quiet-button">Assign</button>
+          </form>
+          {% endif %}
+          <form method="post" action="{{ url_for('attendance.delete_schedule', schedule_id=schedule.id) }}" onsubmit="return confirm('Delete this recurring class, all its generated sessions, and all attendance records for those sessions? This cannot be undone.');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button type="submit" class="quiet-button text-red-700">Delete schedule</button>
+          </form>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="empty-records">No weekly classes have been scheduled for this subject yet.</p>
+    {% endif %}
+  </section>
+  {% else %}
+  <div class="empty-records"><h3>No subjects yet</h3><p>Create a subject above, then add its weekly classes.</p></div>
+  {% endfor %}
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/timetable.js') }}" defer></script>
+{% endblock %}

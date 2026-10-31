@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#172d2a">
+  <title>{% block title %}SmartClass{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            ink: "#172d2a",
+            brand: "#9b4d35",
+            mint: "#668271"
+          },
+          boxShadow: {
+            soft: "0 12px 30px rgba(35, 44, 37, .08)"
+          }
+        }
+      }
+    };
+  </script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/smartclass.css', v=2) }}">
+</head>
+<body class="site-body min-h-full bg-slate-50 text-slate-900 antialiased transition-colors dark:bg-slate-950 dark:text-slate-100">
+  {% block shell %}
+  <div class="min-h-screen">
+    <header class="site-header">
+      <div class="site-header-inner">
+        <a href="{% if session.get('student_id') %}{{ url_for('attendance.student_dashboard') }}{% else %}{{ url_for('attendance.dashboard') }}{% endif %}" class="brand-lockup">
+          <span class="brand-mark" aria-hidden="true">S</span>
+          <span><span class="brand-name">SmartClass</span><span class="brand-caption">Attendance, made visible</span></span>
+        </a>
+        <nav class="site-nav" aria-label="Main navigation">
+          {% if session.get('student_id') %}
+          <a href="{{ url_for('attendance.student_dashboard') }}" class="nav-link {% if request.endpoint == 'attendance.student_dashboard' %}nav-link-active{% endif %}">My attendance</a>
+          {% else %}
+          <a href="{{ url_for('attendance.dashboard') }}" class="nav-link {% if request.endpoint == 'attendance.dashboard' %}nav-link-active{% endif %}">Overview</a>
+          <a href="{{ url_for('attendance.enroll') }}" class="nav-link {% if request.endpoint == 'attendance.enroll' %}nav-link-active{% endif %}">Students</a>
+          <a href="{{ url_for('attendance.live_attendance') }}" class="nav-link {% if request.endpoint == 'attendance.live_attendance' %}nav-link-active{% endif %}">Live class</a>
+          <a href="{{ url_for('attendance.schedules') }}" class="nav-link {% if request.endpoint in ('attendance.schedules', 'attendance.class_session_detail') %}nav-link-active{% endif %}">Timetable</a>
+          {% if session.get('teacher_is_admin') %}
+          <a href="{{ url_for('attendance.teacher_accounts') }}" class="nav-link {% if request.endpoint == 'attendance.teacher_accounts' %}nav-link-active{% endif %}">Teachers</a>
+          {% endif %}
+          <a href="{{ url_for('attendance.student_login') }}" class="nav-link">Student portal</a>
+          {% endif %}
+        </nav>
+        <div class="header-actions">
+          <button id="theme-toggle" type="button" class="theme-button" aria-label="Toggle dark mode">
+            <span id="theme-toggle-label">Dark mode</span>
+          </button>
+          {% if session.get('teacher_username') %}
+          <form action="{{ url_for('attendance.logout') }}" method="post">
+            <input type="hidden" name="csrf_token" value="{{ session.get('_csrf_token', '') }}">
+            <button type="submit" class="quiet-button">Teacher sign out</button>
+          </form>
+          {% elif session.get('student_id') %}
+          <form action="{{ url_for('attendance.student_logout') }}" method="post">
+            <input type="hidden" name="csrf_token" value="{{ session.get('_csrf_token', '') }}">
+            <button type="submit" class="quiet-button">Sign out</button>
+          </form>
+          {% else %}
+          <a href="{{ url_for('attendance.login') }}" class="quiet-button">Teacher sign in</a>
+          {% endif %}
+        </div>
+      </div>
+    </header>
+    <main class="site-main">
+      <div class="site-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="mb-6 space-y-2" role="status" aria-live="polite">
+              {% for category, message in messages %}
+                <div class="notice {% if category == 'error' %}notice-error{% else %}notice-success{% endif %}">{{ message }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+      </div>
+      <footer class="site-footer">
+        <span>SmartClass · A classroom project</span>
+        <span>Only face encodings are stored, not photos. Consent-based enrollment.</span>
+      </footer>
+    </main>
+  </div>
+  {% endblock %}
+  <script src="{{ url_for('static', filename='js/smartclass.js') }}" defer></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
