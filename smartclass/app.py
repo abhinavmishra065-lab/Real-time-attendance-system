@@ -1,4 +1,4 @@
-"""Standalone Flask application for SmartClass."""
+"""SmartClass Flask application factory and WSGI entry point."""
 
 import os
 from pathlib import Path
@@ -12,12 +12,34 @@ from attendance import attendance, db
 
 def create_app(test_config: dict | None = None) -> Flask:
     """Create and configure the SmartClass web application or a test instance."""
-    app = Flask(__name__, instance_relative_config=True)
+    is_vercel = os.environ.get("VERCEL") == "1"
+    database_uri = os.environ.get("SMARTCLASS_DATABASE_URL")
+    if is_vercel and (
+        not database_uri or database_uri.startswith("sqlite:")
+    ):
+        raise RuntimeError(
+            "Set SMARTCLASS_DATABASE_URL to a persistent PostgreSQL database "
+            "before deploying SmartClass to Vercel."
+        )
+    if database_uri and database_uri.startswith("postgres://"):
+        database_uri = database_uri.replace("postgres://", "postgresql+psycopg://", 1)
+    elif database_uri and database_uri.startswith("postgresql://"):
+        database_uri = database_uri.replace(
+            "postgresql://", "postgresql+psycopg://", 1
+        )
+
+    app = Flask(
+        __name__,
+        instance_relative_config=True,
+        static_folder="public/static",
+        static_url_path="/static",
+    )
     app.config.from_mapping(
         SECRET_KEY=os.environ.get(
             "SMARTCLASS_SECRET_KEY", "dev-only-change-this-secret-key"
         ),
-        SQLALCHEMY_DATABASE_URI=f"sqlite:///{Path(app.instance_path) / 'smartclass.db'}",
+        SQLALCHEMY_DATABASE_URI=database_uri
+        or f"sqlite:///{Path(app.instance_path) / 'smartclass.db'}",
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
         ADMIN_USERNAME=os.environ.get("SMARTCLASS_ADMIN_USERNAME", "admin"),
         ADMIN_PASSWORD_HASH=generate_password_hash(
@@ -26,11 +48,13 @@ def create_app(test_config: dict | None = None) -> Flask:
         MAX_CONTENT_LENGTH=3 * 1024 * 1024,
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE="Lax",
+        DISABLE_ATTENDANCE_MAINTENANCE=is_vercel,
     )
     if test_config:
         app.config.update(test_config)
 
-    Path(app.instance_path).mkdir(parents=True, exist_ok=True)
+    if app.config["SQLALCHEMY_DATABASE_URI"].startswith("sqlite:"):
+        Path(app.instance_path).mkdir(parents=True, exist_ok=True)
     db.init_app(app)
     app.register_blueprint(attendance, url_prefix="/attendance")
 
@@ -128,6 +152,8 @@ def create_app(test_config: dict | None = None) -> Flask:
     return app
 
 
+app = create_app()
+
+
 if __name__ == "__main__":
-    application = create_app()
-    application.run(host="127.0.0.1", port=5000, debug=False)
+    app.run(host="127.0.0.1", port=5000, debug=False)

@@ -23,6 +23,25 @@ py -3.11 app.py
 
 Open <http://127.0.0.1:5000/attendance/login> and sign in with the local demo administrator account. The built-in demo credentials are for local development only.
 
+## Deploy to Vercel
+
+Import this repository into Vercel and set **Root Directory** to `smartclass`.
+Vercel detects the Flask `app` instance in `app.py`; use Python 3.12, as pinned
+in `.python-version`.
+
+Vercel's app filesystem is not persistent, so create a PostgreSQL database
+through a Vercel Marketplace integration and add its connection URL as
+`SMARTCLASS_DATABASE_URL`. Also configure `SMARTCLASS_SECRET_KEY`,
+`SMARTCLASS_ADMIN_USERNAME`, and `SMARTCLASS_ADMIN_PASSWORD` in the Vercel
+project's environment settings, then redeploy. SmartClass intentionally refuses
+to start on Vercel without a persistent PostgreSQL URL instead of silently
+losing attendance data in temporary SQLite storage.
+
+Vercel functions do not run the app's local background maintenance thread.
+Scheduled sessions are generated when the timetable is opened, and attendance
+is finalized as class monitors refresh. The local SQLite database and uploaded
+face encodings are not included in the repository.
+
 The SQLite database is created automatically at `instance/smartclass.db`. The default password is hashed before it is checked. For a local demo, set optional environment variables before starting the app:
 
 ```powershell
