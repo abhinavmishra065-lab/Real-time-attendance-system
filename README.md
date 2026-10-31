@@ -1,15 +1,10 @@
-# Real-time Attendance System
+# SmartClass Attendance System
 
-A college exhibition project with two Python attendance applications:
+SmartClass is a Flask web app for teacher and student accounts, scheduled
+classes, geofenced student check-in, attendance review, and attendance
+analytics. It is the only application in this repository.
 
-- **SmartClass** — a Flask web app for teacher and student accounts, scheduled
-  classes, geofenced student check-in, attendance review, and attendance
-  analytics. Setup and usage instructions are in [smartclass/README.md](smartclass/README.md).
-- **Attendance System** — a standalone OpenCV webcam attendance app with
-  student enrollment, face recognition, and a Streamlit dashboard. Install its
-  dependencies from [attendance_system/requirements.txt](attendance_system/requirements.txt).
-
-## Windows quick start: SmartClass
+## Windows setup (Python 3.10 or 3.11)
 
 ```powershell
 cd smartclass
@@ -19,8 +14,8 @@ pip install -r requirements.txt
 python app.py
 ```
 
-Open <http://127.0.0.1:5000/attendance/login>. For the complete setup, account,
-and feature instructions, see [smartclass/README.md](smartclass/README.md).
+Open <http://127.0.0.1:5000/attendance/login>. For the complete setup and usage
+instructions, see [smartclass/README.md](smartclass/README.md).
 
 ## Privacy and local files
 
