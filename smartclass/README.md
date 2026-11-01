@@ -29,6 +29,13 @@ Import this repository into Vercel and set **Root Directory** to `smartclass`.
 Vercel detects the Flask `app` instance in `app.py`; use Python 3.12, as pinned
 in `.python-version`.
 
+The face-recognition, OpenCV, and MediaPipe dependencies make this Python
+function larger than Vercel's standard 500 MB limit. In the Vercel project
+settings, enable Fluid Compute with Active CPU, then add the environment
+variable `VERCEL_SUPPORT_LARGE_FUNCTIONS=1` for the deployment environments.
+Vercel's Large Functions beta supports bundles up to 5 GB. This project needs
+that setting to deploy without removing its face-verification features.
+
 Vercel's app filesystem is not persistent, so create a PostgreSQL database
 through a Vercel Marketplace integration and add its connection URL as
 `SMARTCLASS_DATABASE_URL`. Also configure `SMARTCLASS_SECRET_KEY`,
