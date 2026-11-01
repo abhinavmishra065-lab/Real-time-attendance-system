@@ -26,8 +26,8 @@ Open <http://127.0.0.1:5000/attendance/login> and sign in with the local demo ad
 ## Deploy to Vercel
 
 Import this repository into Vercel and set **Root Directory** to `smartclass`.
-Vercel detects the Flask `app` instance in `app.py`; use Python 3.12, as pinned
-in `.python-version`.
+Vercel detects the Flask `app` instance in `app.py`; use Python 3.11, as pinned
+in `.python-version`, for compatibility with the face-recognition dependencies.
 
 The face-recognition, OpenCV, and MediaPipe dependencies make this Python
 function larger than Vercel's standard 500 MB limit. In the Vercel project
