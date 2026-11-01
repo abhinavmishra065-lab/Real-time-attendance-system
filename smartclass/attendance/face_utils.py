@@ -3,6 +3,7 @@
 import base64
 import binascii
 import threading
+from functools import lru_cache
 from typing import Any
 
 import numpy as np
@@ -23,24 +24,17 @@ class EnrollmentImageError(ValueError):
 
 def decode_face_sample(frame_data: Any) -> np.ndarray:
     """Decode one webcam data URL and return its 128-value face encoding."""
-    try:
-        import face_recognition
-    except ImportError as error:
-        raise RuntimeError(
-            "Face enrollment needs OpenCV and face_recognition. "
-            "Install the smartclass requirements in Python 3.10 or 3.11."
-        ) from error
-
     frame = _decode_image(frame_data)
     small_frame = _resize_for_recognition(frame)
     rgb_frame = _to_rgb(small_frame)
-    face_locations = face_recognition.face_locations(rgb_frame)
+    face_regions = _face_regions(rgb_frame)
+    face_locations = _face_locations(face_regions, rgb_frame.shape)
     if len(face_locations) != 1:
         raise EnrollmentImageError(
             "Exactly one face must be visible. Adjust the camera and try again."
         )
 
-    encodings = face_recognition.face_encodings(rgb_frame, face_locations)
+    encodings = _face_encodings(rgb_frame, face_regions)
     if len(encodings) != 1:
         raise EnrollmentImageError("The face could not be encoded. Please try again.")
     encoding = np.asarray(encodings[0], dtype=np.float64)
@@ -54,21 +48,14 @@ def recognize_faces(
     known_encodings: dict[int, np.ndarray],
 ) -> list[tuple[int, int, int, int, int | None, float | None]]:
     """Find faces in a quarter-size frame and match them to enrolled students."""
-    try:
-        import face_recognition
-    except ImportError as error:
-        raise RuntimeError(
-            "Live attendance needs OpenCV and face_recognition. "
-            "Install the smartclass requirements in Python 3.10 or 3.11."
-        ) from error
-
     frame = _decode_image(frame_data)
     height, width = frame.shape[:2]
     small_frame = _resize_for_recognition(frame)
     small_height, small_width = small_frame.shape[:2]
     rgb_frame = _to_rgb(small_frame)
-    face_locations = face_recognition.face_locations(rgb_frame)
-    face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
+    face_regions = _face_regions(rgb_frame)
+    face_locations = _face_locations(face_regions, rgb_frame.shape)
+    face_encodings = _face_encodings(rgb_frame, face_regions)
     eye_aspect_ratios = face_eye_aspect_ratios(rgb_frame, face_locations)
     known_ids = list(known_encodings)
     known_values = [known_encodings[student_id] for student_id in known_ids]
@@ -81,11 +68,13 @@ def recognize_faces(
     ):
         matched_student_id = None
         if known_values:
-            matches = face_recognition.compare_faces(
-                known_values, encoding, tolerance=0.5
-            )
-            distances = face_recognition.face_distance(known_values, encoding)
-            matching_indexes = [index for index, matched in enumerate(matches) if matched]
+            distances = [
+                float(np.linalg.norm(known_encoding - encoding))
+                for known_encoding in known_values
+            ]
+            matching_indexes = [
+                index for index, distance in enumerate(distances) if distance <= 0.5
+            ]
             if matching_indexes:
                 best_index = min(matching_indexes, key=lambda index: distances[index])
                 matched_student_id = known_ids[best_index]
@@ -101,6 +90,65 @@ def recognize_faces(
             )
         )
     return results
+
+
+@lru_cache(maxsize=1)
+def _face_models() -> tuple[Any, Any, Any]:
+    try:
+        import dlib
+        import face_recognition_models
+    except (ImportError, OSError) as error:
+        raise RuntimeError(
+            "The face-recognition backend is unavailable. Check the SmartClass "
+            "requirements in the active Python environment."
+        ) from error
+
+    return (
+        dlib.get_frontal_face_detector(),
+        dlib.shape_predictor(
+            face_recognition_models.pose_predictor_model_location()
+        ),
+        dlib.face_recognition_model_v1(
+            face_recognition_models.face_recognition_model_location()
+        ),
+    )
+
+
+def _face_regions(rgb_frame: np.ndarray) -> list[Any]:
+    detector, _, _ = _face_models()
+    return detector(rgb_frame, 1)
+
+
+def _face_locations(
+    face_regions: list[Any],
+    image_shape: tuple[int, ...],
+) -> list[tuple[int, int, int, int]]:
+    height, width = image_shape[:2]
+    return [
+        (
+            max(face.top(), 0),
+            min(face.right(), width),
+            min(face.bottom(), height),
+            max(face.left(), 0),
+        )
+        for face in face_regions
+    ]
+
+
+def _face_encodings(
+    rgb_frame: np.ndarray,
+    face_regions: list[Any],
+) -> list[np.ndarray]:
+    _, shape_predictor, face_encoder = _face_models()
+    return [
+        np.asarray(
+            face_encoder.compute_face_descriptor(
+                rgb_frame, shape_predictor(rgb_frame, face), 1
+            ),
+            dtype=np.float64,
+        )
+        for face in face_regions
+    ]
 
 
 def _decode_image(frame_data: Any) -> np.ndarray:

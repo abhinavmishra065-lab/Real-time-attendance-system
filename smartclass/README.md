@@ -29,7 +29,7 @@ Import this repository into Vercel and set **Root Directory** to `smartclass`.
 Vercel detects the Flask `app` instance in `app.py`; use Python 3.12, as pinned
 in `.python-version`.
 
-The face-recognition, OpenCV, and MediaPipe dependencies make this Python
+The dlib, OpenCV, and MediaPipe dependencies make this Python
 function larger than Vercel's standard 500 MB limit. In the Vercel project
 settings, enable Fluid Compute with Active CPU, then add the environment
 variable `VERCEL_SUPPORT_LARGE_FUNCTIONS=1` for the deployment environments.
@@ -136,6 +136,7 @@ Existing SQLite databases are updated at startup to add course, branch, and seme
 
 The website uses a warm paper, forest, and clay palette with responsive student and teacher layouts. A light/dark toggle is available on signed-in pages.
 
-On Windows, `face-recognition` depends on `dlib`; if pip cannot install it in your Python environment, use Python 3.10/3.11 and follow the package's Windows installation guidance. No face image is written to disk.
+The application uses dlib's HOG face detector and 128-value face descriptors
+with the bundled face-recognition model files. No face image is written to disk.
 
 Later project phases will add analytics, engagement scores, and report features.
