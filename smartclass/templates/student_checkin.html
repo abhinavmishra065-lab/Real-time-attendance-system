@@ -23,7 +23,7 @@
     <div class="empty-records"><h2 class="section-title">This class has ended</h2><p>Ask your teacher if you need an attendance correction.</p></div>
   {% else %}
     <h2 class="section-title">Verify your presence</h2>
-    <p class="muted-copy mt-2">Allow location access and camera access during check-in. Your face is matched and blink-checked live; camera frames and coordinates are not saved.</p>
+    <p class="muted-copy mt-2">Allow location access and camera access during check-in. Your face is matched live and your location is checked against the classroom boundary; camera frames and coordinates are not saved.</p>
     <div class="relative mt-5 aspect-video max-w-2xl overflow-hidden rounded-2xl bg-slate-950">
       <video id="checkin-video" class="h-full w-full object-cover" autoplay muted playsinline></video>
       <div id="checkin-placeholder" class="absolute inset-0 grid place-items-center p-8 text-center text-sm text-slate-300">Select start check-in when you are ready.</div>
@@ -32,7 +32,7 @@
       <button id="checkin-start" type="button" class="primary-button">Start check-in</button>
       <button id="checkin-stop" type="button" disabled class="quiet-button">Stop camera</button>
     </div>
-    <p id="checkin-status" class="mt-4 min-h-5 text-sm text-slate-500" role="status" aria-live="polite">A live face match, blink, and location inside the classroom boundary are required.</p>
+    <p id="checkin-status" class="mt-4 min-h-5 text-sm text-slate-500" role="status" aria-live="polite">A live face match and location inside the classroom boundary are required.</p>
   {% endif %}
 </section>
 <p class="calculation-note">Browser location and face checks reduce proxy attendance but cannot guarantee a device's location has not been spoofed. Ask your teacher for help if GPS is inaccurate indoors.</p>

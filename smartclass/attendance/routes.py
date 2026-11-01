@@ -33,24 +33,17 @@ from .face_utils import (
     get_known_encodings,
     recognize_faces,
 )
-from .engagement import BlinkTracker
 from .models import Attendance, Student, Teacher
 from .time_utils import local_now, local_today
 
 ViewFunction = TypeVar("ViewFunction", bound=Callable[..., Any])
 ENROLLMENT_SAMPLE_COUNT = 10
 ENROLLMENT_SESSION_TIMEOUT = 15 * 60
-LIVENESS_SESSION_TIMEOUT = 60 * 60
 _enrollment_lock = threading.Lock()
-_liveness_lock = threading.Lock()
 
 
 def _enrollment_staging() -> dict[str, dict[str, Any]]:
     return current_app.extensions.setdefault("enrollment_staging", {})
-
-
-def _liveness_sessions() -> dict[str, dict[str, Any]]:
-    return current_app.extensions.setdefault("liveness_sessions", {})
 
 
 def _csrf_token_from_json() -> bool:
@@ -415,14 +408,11 @@ def enroll():
 @login_required
 def live_attendance():
     enrolled_count = Student.query.filter(Student.face_encoding.isnot(None)).count()
-    token = secrets.token_urlsafe(32)
-    session["live_token"] = token
     return render_template(
         "live.html",
         csrf_token=_csrf_token(),
         frame_url=url_for("attendance.live_attendance_frame"),
         enrolled_count=enrolled_count,
-        live_token=token,
     )
 
 
@@ -440,7 +430,7 @@ def live_attendance_frame():
         )
         student_ids = {
             student_id
-            for _, _, _, _, student_id, _ in face_results
+            for _, _, _, _, student_id in face_results
             if student_id is not None
         }
         students = {
@@ -448,23 +438,6 @@ def live_attendance_frame():
             for student in Student.query.filter(Student.id.in_(student_ids)).all()
         } if student_ids else {}
         today = local_today()
-        token = session.get("live_token")
-        if not token:
-            return jsonify(error="Reload the live attendance page to start verification."), 400
-        now = time.monotonic()
-        with _liveness_lock:
-            liveness_sessions = _liveness_sessions()
-            expire_before = now - LIVENESS_SESSION_TIMEOUT
-            for expired_token in [
-                key
-                for key, value in liveness_sessions.items()
-                if value["updated_at"] < expire_before
-            ]:
-                liveness_sessions.pop(expired_token, None)
-            liveness_state = liveness_sessions.setdefault(
-                token, {"students": {}, "updated_at": now}
-            )
-            liveness_state["updated_at"] = now
 
         present_ids = {
             student_id
@@ -479,37 +452,30 @@ def live_attendance_frame():
         seen_student_ids: set[int] = set()
         faces = []
 
-        for top, right, bottom, left, student_id, ear in face_results:
+        for top, right, bottom, left, student_id in face_results:
             student = students.get(student_id) if student_id is not None else None
             newly_marked = False
             already_marked = False
-            blink_verified = False
-            if student is not None:
-                tracker = liveness_state["students"].setdefault(
-                    student.id, BlinkTracker()
-                )
-                blink_verified = tracker.update(ear, now)
             if student is not None and student.id not in seen_student_ids:
                 seen_student_ids.add(student.id)
                 if student.id not in present_ids:
-                    if blink_verified:
-                        attendance_record = Attendance()
-                        attendance_record.student_id = student.id
-                        attendance_record.date = today
-                        attendance_record.time = local_now().time()
-                        attendance_record.status = "Present"
-                        db.session.add(attendance_record)
-                        try:
-                            db.session.commit()
-                        except IntegrityError:
-                            db.session.rollback()
-                            already_marked = True
-                        except SQLAlchemyError:
-                            db.session.rollback()
-                            raise
-                        else:
-                            newly_marked = True
-                        present_ids.add(student.id)
+                    attendance_record = Attendance()
+                    attendance_record.student_id = student.id
+                    attendance_record.date = today
+                    attendance_record.time = local_now().time()
+                    attendance_record.status = "Present"
+                    db.session.add(attendance_record)
+                    try:
+                        db.session.commit()
+                    except IntegrityError:
+                        db.session.rollback()
+                        already_marked = True
+                    except SQLAlchemyError:
+                        db.session.rollback()
+                        raise
+                    else:
+                        newly_marked = True
+                    present_ids.add(student.id)
                 else:
                     already_marked = True
 
@@ -523,13 +489,6 @@ def live_attendance_frame():
                     "known": student is not None,
                     "newly_marked": newly_marked,
                     "already_marked": already_marked,
-                    "blink_verified": blink_verified,
-                    "please_blink": (
-                        student is not None
-                        and not already_marked
-                        and not newly_marked
-                        and not blink_verified
-                    ),
                 }
             )
 

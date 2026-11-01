@@ -13,15 +13,11 @@ from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from . import attendance, db
 from .face_utils import EnrollmentImageError, get_known_encodings, recognize_faces
-from .engagement import BlinkTracker
 from .models import Attendance, ClassSchedule, ClassSession, Student, Subject
 from .routes import (
     ENCODING_LENGTH,
-    LIVENESS_SESSION_TIMEOUT,
     _csrf_token,
     _csrf_token_from_json,
-    _liveness_lock,
-    _liveness_sessions,
     _valid_csrf_token,
     login_required,
     student_login_required,
@@ -661,7 +657,6 @@ def student_checkin_frame():
     student_encoding = encodings.get(g.student.id)
     if student_encoding is None or student_encoding.shape != (ENCODING_LENGTH,):
         return jsonify(error="Your face profile is unavailable. Ask your teacher for help."), 409
-    token = session["student_checkin_token"]
     try:
         face_results = recognize_faces(payload.get("frame"), {g.student.id: student_encoding})
     except EnrollmentImageError as error:
@@ -676,33 +671,7 @@ def student_checkin_frame():
     if not matching_results:
         return jsonify(
             recognized=False,
-            please_blink=False,
             status="No matching face detected. Look at the camera and try again.",
-        )
-
-    now_monotonic = time.monotonic()
-    with _liveness_lock:
-        liveness_sessions = _liveness_sessions()
-        expire_before = now_monotonic - LIVENESS_SESSION_TIMEOUT
-        for expired_token in [
-            key
-            for key, value in liveness_sessions.items()
-            if value["updated_at"] < expire_before
-        ]:
-            liveness_sessions.pop(expired_token, None)
-        liveness_state = liveness_sessions.setdefault(
-            token, {"students": {}, "updated_at": now_monotonic}
-        )
-        liveness_state["updated_at"] = now_monotonic
-        tracker = liveness_state["students"].setdefault(g.student.id, BlinkTracker())
-        blink_verified = any(
-            tracker.update(result[5], now_monotonic) for result in matching_results
-        )
-    if not blink_verified:
-        return jsonify(
-            recognized=True,
-            please_blink=True,
-            status="Face verified. Blink once to confirm attendance.",
         )
 
     record = Attendance()
@@ -728,7 +697,7 @@ def student_checkin_frame():
         db.session.rollback()
         current_app.logger.exception("Database error during student check-in")
         return jsonify(error="Attendance could not be saved. Please try again."), 500
-    return jsonify(status="Present", newly_marked=True, please_blink=False)
+    return jsonify(status="Present", newly_marked=True)
 
 
 def student_attendance_summary(student: Student, today: date) -> dict[str, Any]:

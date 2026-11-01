@@ -107,7 +107,7 @@
       await video.play();
       placeholder.classList.add("hidden");
       stopButton.disabled = false;
-      setStatus("Look at the camera and blink once. Your location is checked during this check-in only.");
+      setStatus("Look at the camera. Your face and location are checked during this check-in only.");
       await sendFrame();
       if (stream) timer = window.setInterval(sendFrame, 600);
     } catch (error) {
@@ -118,7 +118,7 @@
   });
   stopButton.addEventListener("click", () => {
     stopCamera();
-    setStatus("Camera stopped. Attendance was not marked unless a face and blink were verified.");
+    setStatus("Camera stopped. Attendance was not marked unless your face was verified.");
   });
   window.addEventListener("pagehide", stopCamera, { once: true });
 })();

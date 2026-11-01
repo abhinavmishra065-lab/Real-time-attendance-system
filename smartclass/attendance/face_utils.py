@@ -8,7 +8,6 @@ from typing import Any
 
 import numpy as np
 
-from .engagement import face_eye_aspect_ratios
 from .models import Student
 
 MAX_FRAME_BYTES = 2 * 1024 * 1024
@@ -46,7 +45,7 @@ def decode_face_sample(frame_data: Any) -> np.ndarray:
 def recognize_faces(
     frame_data: Any,
     known_encodings: dict[int, np.ndarray],
-) -> list[tuple[int, int, int, int, int | None, float | None]]:
+) -> list[tuple[int, int, int, int, int | None]]:
     """Find faces in a quarter-size frame and match them to enrolled students."""
     frame = _decode_image(frame_data)
     height, width = frame.shape[:2]
@@ -56,16 +55,13 @@ def recognize_faces(
     face_regions = _face_regions(rgb_frame)
     face_locations = _face_locations(face_regions, rgb_frame.shape)
     face_encodings = _face_encodings(rgb_frame, face_regions)
-    eye_aspect_ratios = face_eye_aspect_ratios(rgb_frame, face_locations)
     known_ids = list(known_encodings)
     known_values = [known_encodings[student_id] for student_id in known_ids]
     scale_x = width / small_width
     scale_y = height / small_height
 
     results = []
-    for (top, right, bottom, left), encoding, ear in zip(
-        face_locations, face_encodings, eye_aspect_ratios
-    ):
+    for (top, right, bottom, left), encoding in zip(face_locations, face_encodings):
         matched_student_id = None
         if known_values:
             distances = [
@@ -86,7 +82,6 @@ def recognize_faces(
                 round(bottom * scale_y),
                 round(left * scale_x),
                 matched_student_id,
-                ear,
             )
         )
     return results

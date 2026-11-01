@@ -1,6 +1,6 @@
 # SmartClass
 
-SmartClass is a college exhibition project for classroom attendance and engagement analytics. Phase 1 includes a Flask attendance blueprint, SQLAlchemy database models, teacher authentication, and the shared responsive layout. Phase 2 adds consent-based student enrollment using the browser webcam and server-side face encoding. The scheduled attendance flow supports weekly classes, geofenced student check-in, and teacher attendance review. Face/blink checks gate check-in; frames are processed live and not retained.
+SmartClass is a college exhibition project for classroom attendance and engagement analytics. Phase 1 includes a Flask attendance blueprint, SQLAlchemy database models, teacher authentication, and the shared responsive layout. Phase 2 adds consent-based student enrollment using the browser webcam and server-side face encoding. The scheduled attendance flow supports weekly classes, geofenced student check-in, and teacher attendance review. Face matching gates check-in; frames are processed live and not retained.
 
 ## Windows setup (Python 3.10 or 3.11)
 
@@ -29,7 +29,7 @@ Import this repository into Vercel and set **Root Directory** to `smartclass`.
 Vercel detects the Flask `app` instance in `app.py`; use Python 3.12, as pinned
 in `.python-version`.
 
-The dlib, OpenCV, and MediaPipe dependencies make this Python
+The dlib and OpenCV dependencies make this Python
 function larger than Vercel's standard 500 MB limit. In the Vercel project
 settings, enable Fluid Compute with Active CPU, then add the environment
 variable `VERCEL_SUPPORT_LARGE_FUNCTIONS=1` for the deployment environments.
@@ -82,26 +82,16 @@ The sign-in page and footer explain the face-data privacy policy: only face enco
 
 The enrollment API processes only user-triggered captures and keeps partial encodings in memory for up to 15 minutes. A restart clears unfinished sample sessions.
 
-## Legacy daily camera attendance
+## Daily camera attendance
 
 1. Sign in, enroll one or more students, then open **Live attendance** from the sidebar or dashboard.
 2. Select **Start camera** and allow browser camera permission. Use a well-lit room and have an enrolled student face the camera.
-3. Wait for the **Please blink** prompt, then blink. Confirm the student receives a green face box and appears in **Marked present**. Unknown faces receive a red box.
+3. Keep an enrolled student's face in view. Face matches receive a green box and are added to **Marked present**; unknown faces receive a red box.
 4. Keep a recognized face in view for several frames and confirm it is still listed only once for the day.
 5. Select **Stop camera** to end the session. Refresh the page and verify today's list still shows the attendance entries.
 6. To test duplicate prevention, show the same student again later that day; the database retains one attendance row for that student and date.
 
 The browser sends a JPEG frame about every 250 ms to the server. Face matching runs at quarter-size with a 0.5 tolerance. Frames are processed in memory and are not stored. Browser camera access requires localhost or HTTPS.
-
-## Phase 4 blink verification test
-
-1. Install the updated requirements and restart the app so MediaPipe is available.
-2. Open **Live attendance**, start the camera, and have an enrolled student look toward it.
-3. Confirm the face label and status say **Please blink** and that no attendance is added yet.
-4. Have the student blink naturally while facing the camera. The label should change and attendance should be marked once.
-5. Keep the student in view after five seconds: their attendance stays recorded for the day, and no duplicate row is added.
-
-The server estimates Eye Aspect Ratio (EAR) from MediaPipe Face Mesh landmarks. A closed-eye reading followed by an open-eye reading counts as a blink; the blink must be within the preceding five seconds to create a new attendance record. Frames are checked at roughly 250 ms intervals to avoid missing ordinary blinks. Liveness state is temporary and kept in server memory for the active page session.
 
 ## Teacher accounts
 
@@ -115,13 +105,13 @@ The server estimates Eye Aspect Ratio (EAR) from MediaPipe Face Mesh landmarks. 
 1. Enroll each student with their course, branch, and semester. Existing students can have those academic details filled in from the **Students** table without deleting their attendance.
 2. Open **Timetable** as a teacher, create each subject for its course, branch, and semester, then schedule weekly classes under that subject.
 3. Set the classroom center using the teacher device's current location or enter coordinates manually. The allowed radius defaults to 100 m and can be set from 25–500 m.
-4. Students sign in to the student portal, select **Check in** during their class window, allow location and camera access, and look toward the camera and blink. The server verifies that the face matches their enrolled record and checks that reported location is inside the class geofence.
+4. Students sign in to the student portal, select **Check in** during their class window, allow location and camera access, and look toward the camera. The server verifies that the face matches their enrolled record and checks that reported location is inside the class geofence.
 5. Teachers can open **View attendance** from the timetable to monitor the class and use the explicit **Mark present** or **Mark absent** action for each student.
 6. At the scheduled end time, unmarked students are automatically marked Absent. A maintenance thread creates class occurrences and finalizes absences while the single-process demo server is running.
 7. The student portal shows overall and subject-wise attendance percentages, along with present classes out of scheduled classes held since enrollment. Ongoing and future classes are not included in the denominator.
 8. A teacher can delete a recurring class from its subject section. This permanently deletes its generated sessions and all attendance records for those sessions; legacy daily attendance records are not affected.
 
-Camera frames and check-in coordinates are processed for the live request and are not saved. Attendance status, class date, and check-in time are stored. Indoor GPS accuracy can vary; check-in uses the reported coordinates against the teacher-configured radius rather than rejecting a device just because its accuracy estimate exceeds 100 m. Browser geolocation and blink checks are deterrents, not a guarantee against location spoofing or every form of proxy attendance. Browsers require localhost or HTTPS for camera/location access, so phones connecting over a local network need an HTTPS deployment.
+Camera frames and check-in coordinates are processed for the live request and are not saved. Attendance status, class date, and check-in time are stored. Indoor GPS accuracy can vary; check-in uses the reported coordinates against the teacher-configured radius rather than rejecting a device just because its accuracy estimate exceeds 100 m. Browser geolocation is not a guarantee against location spoofing or every form of proxy attendance. Browsers require localhost or HTTPS for camera/location access, so phones connecting over a local network need an HTTPS deployment.
 
 The attendance maintenance thread is intended for the single-process local exhibition server. A multi-worker production deployment should use a single shared scheduler/worker rather than starting one maintenance thread per web worker.
 
@@ -130,7 +120,7 @@ The attendance maintenance thread is intended for the single-process local exhib
 1. Open **Student portal** on the teacher sign-in page or teacher dashboard.
 2. Sign in with the student's enrolled roll number and student email address.
 3. Review the course, branch, semester, today's class schedule/status, attendance percentage, and recent records. Ask your teacher to complete any missing course, branch, or semester details and add a matching weekly timetable entry if your classes do not appear.
-4. During a scheduled class window, select **Check in** beside that class to start your own camera, blink, and geofence verification. The button appears only for a matching scheduled class while it is in session.
+4. During a scheduled class window, select **Check in** beside that class to start your own camera and geofence verification. The button appears only for a matching scheduled class while it is in session.
 5. Sign out when finished.
 
 The percentage uses completed sessions on the matching timetable since the student enrolled. Access is session-based, and each portal session is scoped to the matching student record. Since the exhibition login uses roll number plus email rather than a password, keep the demo on localhost and do not expose it as a public production service.

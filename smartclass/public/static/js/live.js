@@ -48,8 +48,6 @@
       const color = face.known ? "#16a34a" : "#dc2626";
       const label = !face.known
         ? "Unknown"
-        : face.please_blink
-          ? `${face.name} · Please blink`
         : face.newly_marked
           ? `${face.name} · Attendance marked`
           : `${face.name} · Present`;
@@ -59,7 +57,7 @@
       overlayContext.strokeRect(face.left, face.top, boxWidth, boxHeight);
       const labelWidth = overlayContext.measureText(label).width + 16;
       const labelTop = Math.max(0, face.top - 30);
-      overlayContext.fillStyle = face.please_blink ? "#d97706" : color;
+      overlayContext.fillStyle = color;
       overlayContext.fillRect(face.left, labelTop, labelWidth, 28);
       overlayContext.fillStyle = "#ffffff";
       overlayContext.fillText(label, face.left + 8, labelTop + 20);
@@ -125,9 +123,7 @@
       renderPresent(result.present);
       const marked = result.faces.find((face) => face.newly_marked);
       if (marked) showToast(`${marked.name} marked present.`);
-      if (result.faces.some((face) => face.please_blink)) {
-        setStatus("Please blink to verify before attendance is marked.");
-      } else if (result.faces.length === 0) {
+      if (result.faces.length === 0) {
         setStatus("No face detected. Look toward the camera in a well-lit area.");
       } else {
         const unknownCount = result.faces.filter((face) => !face.known).length;
