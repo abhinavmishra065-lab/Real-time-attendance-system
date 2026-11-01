@@ -137,6 +137,7 @@ Existing SQLite databases are updated at startup to add course, branch, and seme
 The website uses a warm paper, forest, and clay palette with responsive student and teacher layouts. A light/dark toggle is available on signed-in pages.
 
 The application uses dlib's HOG face detector and 128-value face descriptors
-with the bundled face-recognition model files. No face image is written to disk.
+with the bundled face-recognition model files. Setuptools is pinned below 81
+because those model files use `pkg_resources`. No face image is written to disk.
 
 Later project phases will add analytics, engagement scores, and report features.
