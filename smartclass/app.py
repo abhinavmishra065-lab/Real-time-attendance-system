@@ -2,12 +2,14 @@
 
 import os
 from pathlib import Path
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from flask import Flask, redirect, url_for
 from sqlalchemy import inspect, text
 from werkzeug.security import generate_password_hash
 
 from attendance import attendance, db
+from attendance.time_utils import DEFAULT_TIMEZONE
 
 
 def create_app(test_config: dict | None = None) -> Flask:
@@ -64,9 +66,16 @@ def create_app(test_config: dict | None = None) -> Flask:
         SESSION_COOKIE_HTTPONLY=True,
         SESSION_COOKIE_SAMESITE="Lax",
         DISABLE_ATTENDANCE_MAINTENANCE=is_vercel,
+        TIMEZONE=os.environ.get("SMARTCLASS_TIMEZONE", DEFAULT_TIMEZONE),
     )
     if test_config:
         app.config.update(test_config)
+    try:
+        ZoneInfo(app.config["TIMEZONE"])
+    except (TypeError, ValueError, ZoneInfoNotFoundError) as error:
+        raise RuntimeError(
+            "Set TIMEZONE or SMARTCLASS_TIMEZONE to a valid IANA timezone."
+        ) from error
 
     if app.config["SQLALCHEMY_DATABASE_URI"].startswith("sqlite:"):
         Path(app.instance_path).mkdir(parents=True, exist_ok=True)

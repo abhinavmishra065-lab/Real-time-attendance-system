@@ -40,7 +40,10 @@ Vercel's app filesystem is not persistent, so create a PostgreSQL database
 through a Vercel Marketplace integration and add its connection URL as
 `SMARTCLASS_DATABASE_URL`. Also configure `SMARTCLASS_SECRET_KEY`,
 `SMARTCLASS_ADMIN_USERNAME`, and `SMARTCLASS_ADMIN_PASSWORD` in the Vercel
-project's environment settings, then redeploy. SmartClass intentionally refuses
+project's environment settings, then redeploy. Set `SMARTCLASS_TIMEZONE` to the
+school's IANA timezone (defaults to `Asia/Kolkata`) so scheduled classes,
+student check-in, and attendance finalization use school-local time rather than
+the server's UTC clock. SmartClass intentionally refuses
 to start on Vercel without a persistent PostgreSQL URL instead of silently
 losing attendance data in temporary SQLite storage.
 

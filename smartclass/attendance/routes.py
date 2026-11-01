@@ -5,7 +5,6 @@ import re
 import secrets
 import threading
 import time
-from datetime import date, datetime
 from functools import wraps
 from typing import Any, Callable, TypeVar
 
@@ -36,6 +35,7 @@ from .face_utils import (
 )
 from .engagement import BlinkTracker
 from .models import Attendance, Student, Teacher
+from .time_utils import local_now, local_today
 
 ViewFunction = TypeVar("ViewFunction", bound=Callable[..., Any])
 ENROLLMENT_SAMPLE_COUNT = 10
@@ -361,7 +361,7 @@ def student_login():
 @student_login_required
 def student_dashboard():
     student = g.student
-    today = date.today()
+    today = local_today()
     from .classroom import student_attendance_summary
 
     summary = student_attendance_summary(student, today)
@@ -374,7 +374,7 @@ def student_dashboard():
         "student_dashboard.html",
         student=student,
         today=today,
-        now=datetime.now(),
+        now=local_now(),
         today_record=summary["today_record"],
         today_sessions=summary["today_sessions"],
         today_present_count=summary["today_present_count"],
@@ -447,7 +447,7 @@ def live_attendance_frame():
             student.id: student
             for student in Student.query.filter(Student.id.in_(student_ids)).all()
         } if student_ids else {}
-        today = date.today()
+        today = local_today()
         token = session.get("live_token")
         if not token:
             return jsonify(error="Reload the live attendance page to start verification."), 400
@@ -496,7 +496,7 @@ def live_attendance_frame():
                         attendance_record = Attendance()
                         attendance_record.student_id = student.id
                         attendance_record.date = today
-                        attendance_record.time = datetime.now().time()
+                        attendance_record.time = local_now().time()
                         attendance_record.status = "Present"
                         db.session.add(attendance_record)
                         try:

@@ -1,8 +1,9 @@
 """Database models for students, attendance, and engagement snapshots."""
 
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 
 from . import db
+from .time_utils import local_now, local_today
 
 
 class Student(db.Model):
@@ -94,7 +95,7 @@ class ClassSchedule(db.Model):
     latitude = db.Column(db.Float, nullable=False)
     longitude = db.Column(db.Float, nullable=False)
     radius_m = db.Column(db.Integer, nullable=False, default=100)
-    starts_on = db.Column(db.Date, nullable=False, default=date.today)
+    starts_on = db.Column(db.Date, nullable=False, default=local_today)
     is_active = db.Column(db.Boolean, nullable=False, default=True)
     subject_id = db.Column(
         db.Integer,
@@ -165,8 +166,8 @@ class Attendance(db.Model):
         nullable=True,
         index=True,
     )
-    date = db.Column(db.Date, nullable=False, default=date.today, index=True)
-    time = db.Column(db.Time, nullable=True, default=lambda: datetime.now().time())
+    date = db.Column(db.Date, nullable=False, default=local_today, index=True)
+    time = db.Column(db.Time, nullable=True, default=lambda: local_now().time())
     status = db.Column(db.String(20), nullable=False, default="Present")
     source = db.Column(db.String(20), nullable=False, default="legacy")
     marked_by_teacher_id = db.Column(

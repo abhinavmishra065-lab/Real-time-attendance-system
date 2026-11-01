@@ -26,6 +26,7 @@ from .routes import (
     login_required,
     student_login_required,
 )
+from .time_utils import local_date_from_utc, local_now, local_today, utc_naive_from_local
 
 _maintenance_lock = threading.Lock()
 _maintenance_started = False
@@ -51,7 +52,10 @@ def _eligible_students(
     )
     if class_date is not None:
         query = query.filter(
-            Student.created_at < datetime.combine(class_date + timedelta(days=1), datetime.min.time())
+            Student.created_at
+            < utc_naive_from_local(
+                datetime.combine(class_date + timedelta(days=1), datetime.min.time())
+            )
         )
     return query.order_by(Student.roll_no).all()
 
@@ -155,8 +159,8 @@ def _maintenance_loop(app: Any) -> None:
     while True:
         with app.app_context():
             try:
-                _ensure_sessions_through(date.today())
-                _finalize_ended_sessions(datetime.now())
+                _ensure_sessions_through(local_today())
+                _finalize_ended_sessions(local_now())
             except SQLAlchemyError:
                 db.session.rollback()
                 app.logger.exception("Scheduled attendance maintenance failed")
@@ -263,7 +267,7 @@ def schedules():
             flash("Weekly class schedule saved.", "success")
         return redirect(url_for("attendance.schedules"))
 
-    _ensure_sessions_through(date.today())
+    _ensure_sessions_through(local_today())
     active_schedules = (
         ClassSchedule.query.filter_by(is_active=True)
         .order_by(ClassSchedule.weekday, ClassSchedule.start_time)
@@ -285,7 +289,7 @@ def schedules():
 
     todays_sessions = (
         ClassSession.query.join(ClassSchedule)
-        .filter(ClassSession.class_date == date.today(), ClassSchedule.is_active.is_(True))
+        .filter(ClassSession.class_date == local_today(), ClassSchedule.is_active.is_(True))
         .order_by(ClassSession.starts_at)
         .all()
     )
@@ -432,7 +436,7 @@ def class_session_detail(session_id: int):
     if class_session is None:
         flash("That class session no longer exists.", "error")
         return redirect(url_for("attendance.schedules"))
-    _finalize_ended_sessions(datetime.now())
+    _finalize_ended_sessions(local_now())
     class_schedule = db.session.get(ClassSchedule, class_session.schedule_id)
     if class_schedule is None:
         flash("The timetable entry for this session no longer exists.", "error")
@@ -445,7 +449,7 @@ def class_session_detail(session_id: int):
         attendance_rows=_attendance_status(class_session, students),
         status_url=url_for("attendance.class_session_status", session_id=session_id),
         csrf_token=_csrf_token(),
-        now=datetime.now(),
+        now=local_now(),
     )
 
 
@@ -455,7 +459,7 @@ def class_session_status(session_id: int):
     class_session = db.session.get(ClassSession, session_id)
     if class_session is None:
         return jsonify(error="That class session no longer exists."), 404
-    _finalize_ended_sessions(datetime.now())
+    _finalize_ended_sessions(local_now())
     class_schedule = db.session.get(ClassSchedule, class_session.schedule_id)
     if class_schedule is None:
         return jsonify(error="The timetable entry for this session no longer exists."), 404
@@ -466,7 +470,7 @@ def class_session_status(session_id: int):
         present=sum(row["status"] == "Present" for row in rows),
         absent=sum(row["status"] == "Absent" for row in rows),
         pending=sum(row["status"] == "Not checked in" for row in rows),
-        ended=class_session.ends_at <= datetime.now(),
+        ended=class_session.ends_at <= local_now(),
     )
 
 
@@ -492,7 +496,7 @@ def update_class_attendance(session_id: int, student_id: int):
         flash("That student is not part of this class session.", "error")
         return redirect(url_for("attendance.schedules"))
     if not _schedule_matches_student(class_schedule, student) or (
-        student.created_at.date() > class_session.class_date
+        local_date_from_utc(student.created_at) > class_session.class_date
     ):
         if wants_json:
             return jsonify(error="That student is not part of this class session."), 404
@@ -515,7 +519,7 @@ def update_class_attendance(session_id: int, student_id: int):
         record.date = class_session.class_date
         db.session.add(record)
     record.status = status_value
-    record.time = datetime.now().time() if status_value == "Present" else None
+    record.time = local_now().time() if status_value == "Present" else None
     record.source = "teacher"
     record.marked_by_teacher_id = g.teacher.id if g.teacher is not None else None
     try:
@@ -550,7 +554,7 @@ def student_checkin(session_id: int):
         class_session is None
         or class_schedule is None
         or not _schedule_matches_student(class_schedule, g.student)
-        or g.student.created_at.date() > class_session.class_date
+        or local_date_from_utc(g.student.created_at) > class_session.class_date
     ):
         flash("That class session is not available for your student account.", "error")
         return redirect(url_for("attendance.student_dashboard"))
@@ -567,7 +571,7 @@ def student_checkin(session_id: int):
         csrf_token=_csrf_token(),
         checkin_token=token,
         existing_record=existing_record,
-        now=datetime.now(),
+        now=local_now(),
     )
 
 
@@ -623,7 +627,7 @@ def student_checkin_frame():
         return jsonify(error="Could not read a valid location. Allow location access and try again."), 400
 
     class_session = db.session.get(ClassSession, session_id)
-    now = datetime.now()
+    now = local_now()
     class_schedule = (
         db.session.get(ClassSchedule, class_session.schedule_id)
         if class_session is not None
@@ -633,7 +637,7 @@ def student_checkin_frame():
         class_session is None
         or class_schedule is None
         or not _schedule_matches_student(class_schedule, g.student)
-        or g.student.created_at.date() > class_session.class_date
+        or local_date_from_utc(g.student.created_at) > class_session.class_date
     ):
         return jsonify(error="That class session is not available for your account."), 403
     if now < class_session.starts_at or now > class_session.ends_at:
@@ -729,7 +733,7 @@ def student_checkin_frame():
 
 def student_attendance_summary(student: Student, today: date) -> dict[str, Any]:
     _ensure_sessions_through(today)
-    _finalize_ended_sessions(datetime.now())
+    _finalize_ended_sessions(local_now())
     schedules = ClassSchedule.query.filter_by(is_active=True).all()
     student_schedules = [
         schedule for schedule in schedules if _schedule_matches_student(schedule, student)
@@ -738,9 +742,9 @@ def student_attendance_summary(student: Student, today: date) -> dict[str, Any]:
     sessions = (
         ClassSession.query.filter(
             ClassSession.schedule_id.in_(schedule_ids),
-            ClassSession.class_date >= student.created_at.date(),
+            ClassSession.class_date >= local_date_from_utc(student.created_at),
             ClassSession.class_date <= today,
-            ClassSession.ends_at <= datetime.now(),
+            ClassSession.ends_at <= local_now(),
         )
         .order_by(ClassSession.class_date.desc(), ClassSession.starts_at.desc())
         .all()
@@ -833,7 +837,7 @@ def student_attendance_summary(student: Student, today: date) -> dict[str, Any]:
             for record in today_records_by_session.values()
         ),
         "today_completed_count": sum(
-            class_session.ends_at <= datetime.now()
+            class_session.ends_at <= local_now()
             for class_session in todays_sessions
         ),
         "today_sessions": [
