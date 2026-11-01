@@ -21,6 +21,21 @@ def create_app(test_config: dict | None = None) -> Flask:
             "Set SMARTCLASS_DATABASE_URL to a persistent PostgreSQL database "
             "before deploying SmartClass to Vercel."
         )
+    if is_vercel:
+        missing_settings = [
+            name
+            for name in (
+                "SMARTCLASS_SECRET_KEY",
+                "SMARTCLASS_ADMIN_USERNAME",
+                "SMARTCLASS_ADMIN_PASSWORD",
+            )
+            if not os.environ.get(name)
+        ]
+        if missing_settings:
+            raise RuntimeError(
+                "Set the required Vercel environment variables: "
+                + ", ".join(missing_settings)
+            )
     if database_uri and database_uri.startswith("postgres://"):
         database_uri = database_uri.replace("postgres://", "postgresql+psycopg://", 1)
     elif database_uri and database_uri.startswith("postgresql://"):
@@ -92,7 +107,12 @@ def create_app(test_config: dict | None = None) -> Flask:
         attendance_columns = {
             column["name"] for column in inspect(db.engine).get_columns("attendance")
         }
-        if "session_id" not in attendance_columns:
+        missing_attendance_columns = {
+            "session_id",
+            "source",
+            "marked_by_teacher_id",
+        } - attendance_columns
+        if missing_attendance_columns and db.engine.dialect.name == "sqlite":
             connection = db.engine.raw_connection()
             cursor = connection.cursor()
             try:
@@ -140,6 +160,49 @@ def create_app(test_config: dict | None = None) -> Flask:
                 cursor.execute("PRAGMA foreign_keys=ON")
                 cursor.close()
                 connection.close()
+        elif missing_attendance_columns:
+            if "session_id" in missing_attendance_columns:
+                db.session.execute(
+                    text(
+                        "ALTER TABLE attendance ADD COLUMN session_id INTEGER "
+                        "REFERENCES class_sessions (id) ON DELETE CASCADE"
+                    )
+                )
+            if "source" in missing_attendance_columns:
+                db.session.execute(
+                    text(
+                        "ALTER TABLE attendance ADD COLUMN source VARCHAR(20) "
+                        "NOT NULL DEFAULT 'legacy'"
+                    )
+                )
+            if "marked_by_teacher_id" in missing_attendance_columns:
+                db.session.execute(
+                    text(
+                        "ALTER TABLE attendance ADD COLUMN marked_by_teacher_id "
+                        "INTEGER REFERENCES teachers (id) ON DELETE SET NULL"
+                    )
+                )
+            unique_constraints = {
+                constraint.get("name")
+                for constraint in inspect(db.engine).get_unique_constraints(
+                    "attendance"
+                )
+            }
+            if "uq_attendance_session_student" not in unique_constraints:
+                db.session.execute(
+                    text(
+                        "ALTER TABLE attendance ADD CONSTRAINT "
+                        "uq_attendance_session_student UNIQUE (session_id, student_id)"
+                    )
+                )
+            for column_name in ("student_id", "session_id", "date"):
+                db.session.execute(
+                    text(
+                        f"CREATE INDEX IF NOT EXISTS ix_attendance_{column_name} "
+                        f"ON attendance ({column_name})"
+                    )
+                )
+            db.session.commit()
 
     from attendance.classroom import start_attendance_maintenance
 
