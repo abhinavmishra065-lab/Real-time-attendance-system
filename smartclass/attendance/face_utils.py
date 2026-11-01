@@ -172,8 +172,8 @@ def _decode_image(frame_data: Any) -> np.ndarray:
         import cv2
     except ImportError as error:
         raise RuntimeError(
-            "Face processing needs OpenCV and face_recognition. "
-            "Install the smartclass requirements in Python 3.10 or 3.11."
+            "The OpenCV face-processing backend could not be loaded. "
+            "Check the server's OpenCV runtime dependencies."
         ) from error
 
     image_array = np.frombuffer(image_bytes, dtype=np.uint8)
