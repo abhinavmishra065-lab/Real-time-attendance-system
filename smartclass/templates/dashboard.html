@@ -3,48 +3,43 @@
 {% block title %}Overview · SmartClass{% endblock %}
 
 {% block content %}
-<div class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+<section class="dashboard-masthead">
   <div>
-    <p class="text-sm font-semibold text-indigo-600 dark:text-indigo-400">CLASSROOM OVERVIEW</p>
-    <h1 class="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">Welcome, {{ session.get('teacher_name', session.get('teacher_username', 'Teacher')) }}</h1>
-    <p class="mt-2 text-slate-500 dark:text-slate-400">Enroll students, set the class timetable, and monitor attendance.</p>
+    <p class="eyebrow">Academic services · Attendance</p>
+    <h1 class="dashboard-title">The class register,<br><em>kept in order.</em></h1>
+    <p class="muted-copy">Welcome, {{ session.get('teacher_name', session.get('teacher_username', 'Teacher')) }}. Set up your classes, verify attendance, and review each student's record.</p>
   </div>
-  <div class="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
-    Scheduled · Geofenced class attendance
-  </div>
-</div>
-
-<section class="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-  <article class="surface-card">
-    <div class="mb-4 grid h-11 w-11 place-items-center rounded-xl bg-indigo-50 text-lg text-indigo-600 dark:bg-indigo-950 dark:text-indigo-300">01</div>
-    <h2 class="font-semibold">Enroll your class</h2>
-    <p class="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">Add each consenting student using ten webcam samples. Only averaged face encodings are saved.</p>
-    <a href="{{ url_for('attendance.enroll') }}" class="mt-4 inline-flex text-sm font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">Open enrollment <span aria-hidden="true" class="ml-1">→</span></a>
-  </article>
-  <article class="surface-card">
-    <div class="mb-4 grid h-11 w-11 place-items-center rounded-xl bg-emerald-50 text-lg text-emerald-600 dark:bg-emerald-950 dark:text-emerald-300">02</div>
-    <h2 class="font-semibold">Schedule a class</h2>
-    <p class="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">Set a weekly class time and geofence. Students check in with live face verification.</p>
-    <a href="{{ url_for('attendance.schedules') }}" class="mt-4 inline-flex text-sm font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">Set the timetable <span aria-hidden="true" class="ml-1">→</span></a>
-  </article>
-  <article class="surface-card">
-    <div class="mb-4 grid h-11 w-11 place-items-center rounded-xl bg-emerald-50 text-lg text-emerald-600 dark:bg-emerald-950 dark:text-emerald-300">03</div>
-    <h2 class="font-semibold">Legacy camera attendance</h2>
-    <p class="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">Optionally use the original teacher-operated classroom camera for daily attendance.</p>
-    <a href="{{ url_for('attendance.live_attendance') }}" class="mt-4 inline-flex text-sm font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">Start live attendance <span aria-hidden="true" class="ml-1">→</span></a>
-  </article>
-  <article class="surface-card sm:col-span-2 xl:col-span-1">
-    <div class="mb-4 grid h-11 w-11 place-items-center rounded-xl bg-amber-50 text-lg text-amber-600 dark:bg-amber-950 dark:text-amber-300">04</div>
-    <h2 class="font-semibold">Give students their own view</h2>
-    <p class="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">Students can check today's status and their attendance percentage using their enrolled roll number and email.</p>
-    <a href="{{ url_for('attendance.student_login') }}" class="mt-4 inline-flex text-sm font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">Open student portal <span aria-hidden="true" class="ml-1">→</span></a>
-  </article>
+  <aside class="dashboard-note">
+    <span class="dashboard-note-label">Classroom workflow</span>
+    <strong>Plan · Verify · Review</strong>
+    <p class="muted-copy">A clear record for every scheduled class, from the first check-in to the final register.</p>
+  </aside>
 </section>
 
-<section class="mt-8 rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-white p-6 dark:border-indigo-950 dark:from-slate-900 dark:to-slate-900 sm:p-8">
-  <p class="text-sm font-semibold text-indigo-700 dark:text-indigo-300">READY FOR YOUR NEXT CLASS?</p>
-  <h2 class="mt-2 text-xl font-bold">Set the timetable and classroom geofence</h2>
-  <p class="mt-2 max-w-2xl text-sm leading-6 text-slate-600 dark:text-slate-400">Students check in from their portal during class with live face verification and location. The teacher view tracks the session and marks remaining students absent after class ends.</p>
-  <a href="{{ url_for('attendance.schedules') }}" class="mt-5 inline-flex rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700">Open class timetable</a>
+<section class="dashboard-grid mt-7 grid gap-4 sm:grid-cols-2" aria-label="Attendance tools">
+  <article class="surface-card">
+    <span class="dashboard-card-number">01 · Student records</span>
+    <h2 class="section-title">Enroll your class</h2>
+    <p class="muted-copy">Add student details and capture consent-based face samples. Only face encodings are stored.</p>
+    <a href="{{ url_for('attendance.enroll') }}" class="mt-5 inline-flex text-sm font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">Open student records <span aria-hidden="true" class="ml-1">→</span></a>
+  </article>
+  <article class="surface-card">
+    <span class="dashboard-card-number">02 · Weekly schedule</span>
+    <h2 class="section-title">Set up the timetable</h2>
+    <p class="muted-copy">Create subjects and scheduled classes, then set the classroom boundary for student check-in.</p>
+    <a href="{{ url_for('attendance.schedules') }}" class="mt-5 inline-flex text-sm font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">Open timetable <span aria-hidden="true" class="ml-1">→</span></a>
+  </article>
+  <article class="surface-card">
+    <span class="dashboard-card-number">03 · Session review</span>
+    <h2 class="section-title">Review attendance</h2>
+    <p class="muted-copy">Check live attendance for a scheduled class or use the original teacher-operated classroom camera.</p>
+    <a href="{{ url_for('attendance.live_attendance') }}" class="mt-5 inline-flex text-sm font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">Open live class <span aria-hidden="true" class="ml-1">→</span></a>
+  </article>
+  <article class="surface-card">
+    <span class="dashboard-card-number">04 · Student portal</span>
+    <h2 class="section-title">Student progress</h2>
+    <p class="muted-copy">Students can review their subject-wise attendance and check in during scheduled classes.</p>
+    <a href="{{ url_for('attendance.student_login') }}" class="mt-5 inline-flex text-sm font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400">Open student portal <span aria-hidden="true" class="ml-1">→</span></a>
+  </article>
 </section>
 {% endblock %}

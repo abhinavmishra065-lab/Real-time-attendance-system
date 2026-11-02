@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#172d2a">
+  <meta name="theme-color" content="#17263d">
   <title>{% block title %}SmartClass{% endblock %}</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -12,9 +12,9 @@
       theme: {
         extend: {
           colors: {
-            ink: "#172d2a",
-            brand: "#9b4d35",
-            mint: "#668271"
+            ink: "#18243a",
+            brand: "#822d3b",
+            mint: "#b38a4a"
           },
           boxShadow: {
             soft: "0 12px 30px rgba(35, 44, 37, .08)"
@@ -23,7 +23,7 @@
       }
     };
   </script>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/smartclass.css', v=2) }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/smartclass.css', v=3) }}">
 </head>
 <body class="site-body min-h-full bg-slate-50 text-slate-900 antialiased transition-colors dark:bg-slate-950 dark:text-slate-100">
   {% block shell %}
@@ -32,7 +32,7 @@
       <div class="site-header-inner">
         <a href="{% if session.get('student_id') %}{{ url_for('attendance.student_dashboard') }}{% else %}{{ url_for('attendance.dashboard') }}{% endif %}" class="brand-lockup">
           <span class="brand-mark" aria-hidden="true">S</span>
-          <span><span class="brand-name">SmartClass</span><span class="brand-caption">Attendance, made visible</span></span>
+          <span><span class="brand-name">SmartClass</span><span class="brand-caption">College attendance register</span></span>
         </a>
         <nav class="site-nav" aria-label="Main navigation">
           {% if session.get('student_id') %}

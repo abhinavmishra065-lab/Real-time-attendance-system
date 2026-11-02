@@ -665,13 +665,20 @@ def student_checkin_frame():
         current_app.logger.exception("Student check-in face recognition failed")
         return jsonify(error=str(error)), 503
 
-    matching_results = [
-        result for result in face_results if result[4] == g.student.id
-    ]
-    if not matching_results:
+    if not face_results:
         return jsonify(
             recognized=False,
-            status="No matching face detected. Look at the camera and try again.",
+            status="No face detected. Look at the camera and try again.",
+        )
+    if len(face_results) != 1:
+        return jsonify(
+            recognized=False,
+            status="More than one face detected. Make sure only you are in view.",
+        )
+    if face_results[0][4] != g.student.id:
+        return jsonify(
+            recognized=False,
+            status="Face not verified. Look toward the camera and try again.",
         )
 
     record = Attendance()

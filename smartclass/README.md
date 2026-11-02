@@ -104,8 +104,8 @@ The browser sends a JPEG frame about every 250 ms to the server. Face matching r
 
 1. Enroll each student with their course, branch, and semester. Existing students can have those academic details filled in from the **Students** table without deleting their attendance.
 2. Open **Timetable** as a teacher, create each subject for its course, branch, and semester, then schedule weekly classes under that subject.
-3. Set the classroom center using the teacher device's current location or enter coordinates manually. The allowed radius defaults to 100 m and can be set from 25–500 m.
-4. Students sign in to the student portal, select **Check in** during their class window, allow location and camera access, and look toward the camera. The server verifies that the face matches their enrolled record and checks that reported location is inside the class geofence.
+3. Set the classroom center using the teacher device's current location or enter coordinates manually. If a high-accuracy fix times out, the browser retries with its standard location provider. The allowed radius defaults to 100 m and can be set from 25–500 m.
+4. Students sign in to the student portal, select **Check in** during their class window, allow location and camera access, and look toward the camera. The server requires exactly one visible face to match the student's enrolled record and checks that reported location is inside the class geofence. If high-accuracy GPS times out, the browser retries with its standard location provider.
 5. Teachers can open **View attendance** from the timetable to monitor the class and use the explicit **Mark present** or **Mark absent** action for each student.
 6. At the scheduled end time, unmarked students are automatically marked Absent. A maintenance thread creates class occurrences and finalizes absences while the single-process demo server is running.
 7. The student portal shows overall and subject-wise attendance percentages, along with present classes out of scheduled classes held since enrollment. Ongoing and future classes are not included in the denominator.
@@ -127,7 +127,7 @@ The percentage uses completed sessions on the matching timetable since the stude
 
 Existing SQLite databases are updated at startup to add course, branch, and semester columns, teacher account tables, and per-class attendance support without removing existing student or daily attendance records. Legacy attendance remains available in student history; the new percentage is calculated from scheduled classes.
 
-The website uses a warm paper, forest, and clay palette with responsive student and teacher layouts. A light/dark toggle is available on signed-in pages.
+The website uses a restrained oxblood, navy, and brass palette with an editorial college-register layout and responsive student and teacher pages. A light/dark toggle is available on signed-in pages.
 
 The application uses dlib's HOG face detector and 128-value face descriptors
 with the bundled face-recognition model files. Setuptools is pinned below 81

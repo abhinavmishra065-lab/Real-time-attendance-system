@@ -1,17 +1,16 @@
-@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&display=swap");
-
 :root {
   color-scheme: light;
-  --paper: #f5f2e9;
-  --paper-light: #fbfaf6;
-  --ink: #22332f;
-  --muted: #737b70;
-  --line: #dedfd3;
-  --forest: #294b40;
-  --forest-dark: #19372f;
-  --clay: #a64f36;
-  --sage: #e7ece3;
-  --success: #35644d;
+  --paper: #f2eee5;
+  --paper-light: #fcfaf5;
+  --ink: #18243a;
+  --muted: #6d6d70;
+  --line: #d9d1c4;
+  --forest: #263d5a;
+  --forest-dark: #17263d;
+  --clay: #822d3b;
+  --sage: #e9e2d6;
+  --success: #32644c;
+  --brass: #b38a4a;
 }
 
 html {
@@ -21,13 +20,11 @@ html {
 body,
 button,
 input {
-  font-family: "DM Sans", "Segoe UI", sans-serif;
+  font-family: "Aptos", "Segoe UI", sans-serif;
 }
 
 .site-body.bg-slate-50 {
-  background:
-    radial-gradient(ellipse at 12% 2%, rgb(208 214 195 / 28%), transparent 29rem),
-    var(--paper) !important;
+  background: var(--paper) !important;
   color: var(--ink) !important;
 }
 
@@ -64,20 +61,19 @@ input {
 .site-body .dark\:bg-slate-950,
 .site-body .dark\:bg-slate-900,
 .site-body .dark\:bg-slate-800 {
-  background-color: #202c28;
+  background-color: #202735;
 }
 
 .site-body .dark\:border-slate-800 {
-  border-color: #35433d;
+  border-color: #414958;
 }
 
 .site-header {
   position: sticky;
   z-index: 20;
   top: 0;
-  border-bottom: 1px solid rgb(34 51 47 / 10%);
-  background: rgb(251 250 246 / 94%);
-  backdrop-filter: blur(14px);
+  border-bottom: 2px solid var(--brass);
+  background: var(--paper-light);
 }
 
 .site-header-inner {
@@ -104,17 +100,17 @@ input {
   width: 40px;
   height: 40px;
   place-items: center;
-  border-radius: 50%;
+  border-radius: 0.25rem;
   background: var(--forest);
-  color: #fbfaf6;
-  font-family: "Playfair Display", Georgia, serif;
+  color: #f8f3e8;
+  font-family: Georgia, "Times New Roman", serif;
   font-size: 1.35rem;
   font-weight: 600;
 }
 
 .brand-name {
   display: block;
-  font-family: "Playfair Display", Georgia, serif;
+  font-family: Georgia, "Times New Roman", serif;
   font-size: 1.15rem;
   font-weight: 700;
   letter-spacing: -0.035em;
@@ -139,9 +135,9 @@ input {
   display: inline-flex;
   align-items: center;
   white-space: nowrap;
-  border-radius: 999px;
+  border-radius: 0.3rem;
   padding: 0.62rem 0.85rem;
-  color: #626d64;
+  color: #515762;
   font-size: 0.82rem;
   font-weight: 600;
   text-decoration: none;
@@ -150,7 +146,7 @@ input {
 
 .nav-link:hover,
 .nav-link-active {
-  background: #e9eee6;
+  background: var(--sage);
   color: var(--forest-dark);
 }
 
@@ -161,10 +157,10 @@ input {
 .theme-button,
 .quiet-button {
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: 0.3rem;
   background: transparent;
   padding: 0.58rem 0.85rem;
-  color: #626d64;
+  color: #515762;
   font-size: 0.76rem;
   font-weight: 600;
   text-decoration: none;
@@ -174,20 +170,20 @@ input {
 
 .theme-button:hover,
 .quiet-button:hover {
-  border-color: #a9b5a8;
-  background: #edf0e9;
+  border-color: var(--brass);
+  background: var(--sage);
   color: var(--forest-dark);
 }
 
 .site-content .attendance-choice[aria-pressed="true"][value="Present"] {
-  border-color: #35644d;
-  background: #35644d;
+  border-color: var(--success);
+  background: var(--success);
   color: #fff;
 }
 
 .site-content .attendance-choice[aria-pressed="true"][value="Absent"] {
-  border-color: #a64f36;
-  background: #a64f36;
+  border-color: var(--clay);
+  background: var(--clay);
   color: #fff;
 }
 
@@ -205,23 +201,80 @@ input {
 .site-content h1,
 .site-content h2,
 .site-content h3 {
-  font-family: "Playfair Display", Georgia, serif;
+  font-family: Georgia, "Times New Roman", serif;
   letter-spacing: -0.035em;
 }
 
 .site-content .surface-card {
   border: 1px solid var(--line);
-  border-radius: 0.85rem;
+  border-radius: 0.45rem;
   background: var(--paper-light);
   padding: 1.5rem;
-  box-shadow: 0 7px 22px rgb(34 51 47 / 4%);
+  box-shadow: 0 5px 16px rgb(24 36 58 / 5%);
   transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
 .site-content .surface-card:hover {
   transform: none;
-  border-color: #c7cdbf;
-  box-shadow: 0 10px 28px rgb(34 51 47 / 7%);
+  border-color: #c4b38f;
+  box-shadow: 0 8px 20px rgb(24 36 58 / 8%);
+}
+
+.dashboard-masthead {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(250px, 0.7fr);
+  align-items: stretch;
+  gap: 2rem;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 2rem;
+}
+
+.dashboard-title {
+  max-width: 700px;
+  margin-top: 0.75rem;
+  font-size: clamp(2.8rem, 6vw, 5rem);
+  line-height: 1;
+}
+
+.dashboard-title em {
+  color: var(--clay);
+  font-weight: 500;
+}
+
+.dashboard-note {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  border-left: 3px solid var(--brass);
+  background: var(--paper-light);
+  padding: 1.5rem;
+}
+
+.dashboard-note-label,
+.dashboard-card-number {
+  color: var(--muted);
+  font-size: 0.63rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.dashboard-note strong {
+  margin-top: 0.8rem;
+  color: var(--forest-dark);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.55rem;
+  font-weight: 500;
+}
+
+.dashboard-grid .surface-card {
+  min-height: 210px;
+}
+
+.dashboard-card-number {
+  display: block;
+  margin-bottom: 1rem;
+  color: var(--clay);
 }
 
 .site-content .bg-gradient-to-br {
@@ -230,14 +283,14 @@ input {
 
 .site-content .form-input {
   border-color: #cdd1c5;
-  border-radius: 0.55rem;
-  background: #fffefa;
+  border-radius: 0.3rem;
+  background: #fffdf8;
   color: var(--ink);
 }
 
 .site-content .form-input:focus {
   border-color: var(--forest);
-  box-shadow: 0 0 0 3px rgb(41 75 64 / 12%);
+  box-shadow: 0 0 0 3px rgb(38 61 90 / 13%);
 }
 
 .site-footer {
@@ -260,15 +313,15 @@ input {
 }
 
 .notice-error {
-  border-color: #e1b5a8;
-  background: #fbefeb;
-  color: #843d2b;
+  border-color: #d7b5b4;
+  background: #f7e9e8;
+  color: #742d37;
 }
 
 .notice-success {
-  border-color: #bfd0be;
-  background: #eef4eb;
-  color: #365b43;
+  border-color: #b9c9bc;
+  background: #eaf1e9;
+  color: #315940;
 }
 
 .eyebrow {
@@ -293,13 +346,11 @@ input {
   justify-content: space-between;
   padding: clamp(2rem, 7vw, 6rem);
   color: #f7f4e9;
-  background:
-    radial-gradient(ellipse at 14% 12%, rgb(222 206 151 / 15%), transparent 30rem),
-    var(--forest-dark);
+  background: var(--forest-dark);
 }
 
 .brand-mark-light {
-  background: #d7b780;
+  background: var(--brass);
   color: var(--forest-dark);
 }
 
@@ -310,7 +361,7 @@ input {
 .story-title,
 .student-story-title {
   margin: 1rem 0;
-  font-family: "Playfair Display", Georgia, serif;
+  font-family: Georgia, "Times New Roman", serif;
   font-size: clamp(3.2rem, 6vw, 5.8rem);
   font-weight: 500;
   line-height: 0.99;
@@ -332,7 +383,7 @@ input {
 
 .story-tag {
   border: 1px solid rgb(255 255 255 / 22%);
-  border-radius: 999px;
+  border-radius: 0.3rem;
   padding: 0.55rem 0.85rem;
   color: #e4e6d9;
   font-size: 0.76rem;
@@ -349,7 +400,7 @@ input {
 .student-login-card {
   width: min(100%, 440px);
   border: 1px solid #e1dfd3;
-  border-radius: 0.85rem;
+  border-radius: 0.45rem;
   background: var(--paper-light);
   padding: clamp(1.7rem, 4vw, 2.6rem);
   box-shadow: 0 20px 55px rgb(22 39 33 / 9%);
@@ -358,7 +409,7 @@ input {
 .auth-heading {
   margin-top: 0.45rem;
   color: var(--ink);
-  font-family: "Playfair Display", Georgia, serif;
+  font-family: Georgia, "Times New Roman", serif;
   font-size: 2rem;
   letter-spacing: -0.05em;
 }
@@ -377,7 +428,7 @@ input {
   align-items: center;
   justify-content: center;
   border: 0;
-  border-radius: 0.55rem;
+  border-radius: 0.3rem;
   background: var(--forest);
   padding: 0.8rem 1rem;
   color: white;
@@ -411,9 +462,7 @@ input {
 
 .student-auth-page {
   min-height: 100vh;
-  background:
-    radial-gradient(ellipse at 86% 9%, rgb(208 214 195 / 38%), transparent 32rem),
-    var(--paper);
+  background: var(--paper);
 }
 
 .student-auth-header {
@@ -520,7 +569,7 @@ input {
   display: grid;
   min-width: 150px;
   gap: 0.3rem;
-  border-left: 2px solid #c6a575;
+  border-left: 2px solid var(--brass);
   padding: 0.35rem 0 0.35rem 1rem;
 }
 
@@ -533,7 +582,7 @@ input {
 }
 
 .student-id-chip strong {
-  font-family: "Playfair Display", Georgia, serif;
+  font-family: Georgia, "Times New Roman", serif;
   font-size: 1.15rem;
 }
 
@@ -546,15 +595,14 @@ input {
 .student-stat-card,
 .record-section {
   border: 1px solid var(--line);
-  border-radius: 0.8rem;
+  border-radius: 0.45rem;
   background: var(--paper-light);
   padding: clamp(1.25rem, 3vw, 2rem);
 }
 
 .attendance-score-card {
-  background:
-    linear-gradient(135deg, rgb(231 236 227 / 75%), transparent 70%),
-    var(--paper-light);
+  border-top: 3px solid var(--brass);
+  background: var(--paper-light);
 }
 
 .score-topline,
@@ -573,7 +621,7 @@ input {
 }
 
 .attendance-score {
-  font-family: "Playfair Display", Georgia, serif;
+  font-family: Georgia, "Times New Roman", serif;
   font-size: clamp(3.5rem, 8vw, 6rem);
   font-weight: 500;
   letter-spacing: -0.07em;
@@ -590,7 +638,7 @@ input {
   height: 8px;
   overflow: hidden;
   border-radius: 999px;
-  background: #dfe4d9;
+  background: #ded8cd;
 }
 
 .score-track span {
@@ -611,7 +659,7 @@ input {
   align-items: center;
   gap: 0.55rem;
   margin-top: 1.15rem;
-  font-family: "Playfair Display", Georgia, serif;
+  font-family: Georgia, "Times New Roman", serif;
   font-size: clamp(1.35rem, 2.5vw, 1.8rem);
 }
 
@@ -684,7 +732,7 @@ input {
 }
 
 .record-date-block strong {
-  font-family: "Playfair Display", Georgia, serif;
+  font-family: Georgia, "Times New Roman", serif;
   font-size: 1.1rem;
 }
 
@@ -727,7 +775,7 @@ input {
 
 .empty-mark {
   color: #b6b9aa;
-  font-family: "Playfair Display", Georgia, serif;
+  font-family: Georgia, "Times New Roman", serif;
   font-size: 2rem;
 }
 
@@ -788,6 +836,11 @@ input {
   .site-content {
     width: min(100% - 2rem, 1180px);
     padding-top: 2rem;
+  }
+
+  .dashboard-masthead {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
   }
 
   .site-footer {
@@ -856,25 +909,26 @@ input {
 
 html.dark {
   color-scheme: dark;
-  --paper: #202a26;
-  --paper-light: #27332d;
-  --ink: #eeeadd;
-  --muted: #b0b7a9;
-  --line: #3d4a42;
-  --forest: #a9c5ad;
-  --forest-dark: #e6eadf;
-  --clay: #dda18a;
-  --sage: #34443b;
+  --paper: #202735;
+  --paper-light: #282f3e;
+  --ink: #f0eadf;
+  --muted: #bdc0c4;
+  --line: #414958;
+  --forest: #b7c8df;
+  --forest-dark: #f0eadf;
+  --clay: #e2a0a5;
+  --sage: #343c4a;
   --success: #a9d1ad;
+  --brass: #c7a76c;
 }
 
 html.dark .site-body.bg-slate-50 {
-  background: #202a26 !important;
+  background: #202735 !important;
 }
 
 html.dark .site-header {
-  border-color: #3d4a42;
-  background: rgb(32 42 38 / 95%);
+  border-color: #414958;
+  background: #202735;
 }
 
 html.dark .brand-lockup,
@@ -903,7 +957,7 @@ html.dark .nav-link:hover,
 html.dark .nav-link-active,
 html.dark .theme-button:hover,
 html.dark .quiet-button:hover {
-  background: #34443b;
+  background: #343c4a;
   color: var(--ink);
 }
 
@@ -915,21 +969,21 @@ html.dark .record-section {
 }
 
 html.dark .attendance-score-card {
-  background: linear-gradient(135deg, rgb(52 68 59 / 78%), transparent 70%), var(--paper-light);
+  background: var(--paper-light);
 }
 
 html.dark .site-content .form-input {
   border-color: #506055;
-  background: #202a26;
+  background: #202735;
   color: var(--ink);
 }
 
 html.dark .record-row {
-  border-color: #3d4a42;
+  border-color: #414958;
 }
 
 html.dark .site-footer {
-  border-color: #3d4a42;
+  border-color: #414958;
 }
 
 @media (prefers-reduced-motion: reduce) {

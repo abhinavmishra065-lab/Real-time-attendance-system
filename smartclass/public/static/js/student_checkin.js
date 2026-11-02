@@ -12,7 +12,7 @@
   let stream = null;
   let timer = null;
   let sending = false;
-  let location = null;
+  let checkinLocation = null;
 
   const setStatus = (message, isError = false) => {
     status.textContent = message;
@@ -30,27 +30,53 @@
       stream = null;
     }
     video.srcObject = null;
+    placeholder.classList.remove("hidden");
     startButton.disabled = false;
     stopButton.disabled = true;
   };
 
-  const getLocation = () => new Promise((resolve, reject) => {
-    if (!navigator.geolocation) {
-      reject(new Error("This browser does not support location access."));
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (position) => resolve({
-        latitude: position.coords.latitude,
-        longitude: position.coords.longitude,
-        accuracy: position.coords.accuracy,
-      }),
-      (error) => reject(new Error(error.code === error.PERMISSION_DENIED
-        ? "Location permission was denied. Allow it to check in."
-        : "Could not determine your location. Move to a clearer area and retry.")),
-      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
-    );
+  const requestLocation = (options) => new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(resolve, reject, options);
   });
+
+  const locationErrorMessage = (error) => {
+    if (error.code === error.PERMISSION_DENIED) {
+      return "Location permission was denied. Allow location access for this site, then try again.";
+    }
+    if (error.code === error.TIMEOUT) {
+      return "Your location request timed out. Move near a window and try again.";
+    }
+    return "Your location could not be determined. Check device location services and try again.";
+  };
+
+  const getLocation = async () => {
+    if (window.isSecureContext === false) {
+      throw new Error("Location and camera access require HTTPS or localhost. Open this site securely and try again.");
+    }
+    if (!navigator.geolocation) {
+      throw new Error("This browser does not support location access.");
+    }
+    try {
+      return await requestLocation({
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0,
+      });
+    } catch (error) {
+      if (error.code === error.PERMISSION_DENIED) {
+        throw new Error(locationErrorMessage(error));
+      }
+      try {
+        return await requestLocation({
+          enableHighAccuracy: false,
+          timeout: 20000,
+          maximumAge: 30000,
+        });
+      } catch (retryError) {
+        throw new Error(locationErrorMessage(retryError));
+      }
+    }
+  };
 
   const sendFrame = async () => {
     if (!stream || sending || video.readyState < HTMLMediaElement.HAVE_CURRENT_DATA) return;
@@ -66,9 +92,9 @@
           csrf_token: page.dataset.csrfToken,
           checkin_token: page.dataset.checkinToken,
           session_id: page.dataset.sessionId,
-          latitude: location.latitude,
-          longitude: location.longitude,
-          accuracy: location.accuracy,
+          latitude: checkinLocation.latitude,
+          longitude: checkinLocation.longitude,
+          accuracy: checkinLocation.accuracy,
           frame: canvas.toDataURL("image/jpeg", 0.75),
         }),
       });
@@ -94,11 +120,16 @@
     startButton.disabled = true;
     setStatus("Requesting location permission…");
     try {
-      location = await getLocation();
+      const position = await getLocation();
+      checkinLocation = {
+        latitude: position.coords.latitude,
+        longitude: position.coords.longitude,
+        accuracy: position.coords.accuracy,
+      };
+      setStatus(`Location found (about ${Math.round(checkinLocation.accuracy)} m accuracy). Requesting camera permission…`);
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         throw new Error("This browser cannot access a webcam. Use localhost or HTTPS.");
       }
-      setStatus("Requesting camera permission…");
       stream = await navigator.mediaDevices.getUserMedia({
         audio: false,
         video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 480 } },
